@@ -5,9 +5,10 @@ interface DiscussPageProps {
   params: {
     id: string;
   };
+  searchParams?: { [key: string]: string | string[] | undefined };
 }
 
-export default async function DiscussPage({ params }: DiscussPageProps) {
+export default async function DiscussPage({ params, searchParams }: DiscussPageProps) {
   const sbirService = new SBIRApiService();
   const solicitation = await sbirService.getSolicitation(params.id);
 
