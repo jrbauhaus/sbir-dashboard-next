@@ -4,12 +4,13 @@ import React, { useState } from 'react';
 import {
   Box, Typography, Paper, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Button, Accordion, AccordionSummary, AccordionDetails,
-  Popover, IconButton, Tooltip
+  Popover, IconButton, Tooltip, TextField, InputAdornment
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import SearchIcon from '@mui/icons-material/Search';
 import { SBIRSolicitation, SBIRTopic } from '@/types/sbir'; // Updated import path
 
 // Helper function for consistent date formatting (moved inside or to a util file)
@@ -39,9 +40,41 @@ interface SolicitationTableProps {
 }
 
 export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitations }) => {
-  // State for managing the popover
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
   const [currentTopic, setCurrentTopic] = useState<SBIRTopic | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Process the solicitations prop to create displayItems
+  const displayItems: DisplayItem[] = Array.isArray(solicitations)
+    ? solicitations.flatMap((sol: SBIRSolicitation): DisplayItem[] => {
+      if (sol.solicitation_topics && sol.solicitation_topics.length > 0) {
+        return sol.solicitation_topics.map((topic: SBIRTopic): DisplayItem => ({
+          ...topic,
+          agency: sol.agency,
+          current_status: sol.current_status,
+          solicitation_agency_url: sol.solicitation_agency_url,
+          close_date: sol.close_date,
+          solicitation_number: sol.solicitation_number,
+          solicitation_title: sol.solicitation_title,
+          isTopic: true,
+          displayId: `${sol.solicitation_id}-${topic.topic_number}`
+        }));
+      } else {
+        return [{
+          ...sol,
+          isTopic: false,
+          displayId: `${sol.solicitation_id}`
+        }];
+      }
+    })
+    : [];
+  
+  // Filter items based on search
+  const filteredItems = displayItems.filter(item => 
+    item.topic_title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.solicitation_title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.topic_number?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleClickApplyPopover = (event: React.MouseEvent<HTMLButtonElement>, topic: SBIRTopic) => {
     setAnchorEl(event.currentTarget);
@@ -73,32 +106,6 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
   const open = Boolean(anchorEl);
   const popoverId = open ? 'copy-topic-popover' : undefined;
 
-  // Process the solicitations prop to create displayItems
-  const displayItems: DisplayItem[] = Array.isArray(solicitations)
-    ? solicitations.flatMap((sol: SBIRSolicitation): DisplayItem[] => {
-      if (sol.solicitation_topics && sol.solicitation_topics.length > 0) {
-        return sol.solicitation_topics.map((topic: SBIRTopic): DisplayItem => ({
-          ...topic,
-          agency: sol.agency,
-          current_status: sol.current_status, // Keep solicitation status if needed
-          solicitation_agency_url: sol.solicitation_agency_url,
-          close_date: sol.close_date, // Carry over solicitation close date for topics
-          solicitation_number: sol.solicitation_number, // Carry over solicitation number
-          solicitation_title: sol.solicitation_title, // Carry over solicitation title
-          isTopic: true,
-          displayId: `${sol.solicitation_id}-${topic.topic_number}`
-        }));
-      } else {
-        // Use the solicitation itself if it has no topics (and is active)
-        return [{
-          ...sol,
-          isTopic: false,
-          displayId: `${sol.solicitation_id}`
-        }];
-      }
-    })
-    : [];
-
   console.log('[SolicitationTable Client Component] Processed displayItems:', displayItems);
 
   return (
@@ -107,143 +114,171 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
       minHeight: 'calc(100vh - 120px)',
       pt: { xs: 2, sm: 3 }
     }}>
-      {/* Inner Content Container */}
       <Box sx={{ px: { xs: 2, sm: 2, md: 3 } }}>
-        {displayItems.length === 0 ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', my: 6, padding: 4, border: `1px dashed grey.700`, borderRadius: 1.5, bgcolor: 'grey.800' }}>
-            <Typography sx={{ color: 'grey.400' }}>No open DoD solicitations or topics found.</Typography>
-          </Box>
-        ) : (
-          <TableContainer
-            component={Paper}
-            elevation={0}
-            sx={{
-              maxHeight: '70vh',
-              overflow: 'auto',
-              backgroundColor: 'grey.800',
-              border: `1px solid grey.700`,
-              borderRadius: 1.5
+        {/* Search Bar */}
+        <Box sx={{ mb: 3 }}>
+          <TextField
+            fullWidth
+            variant="outlined"
+            placeholder="Search opportunities..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: 'grey.600' }} />
+                </InputAdornment>
+              ),
+              sx: {
+                bgcolor: 'grey.800',
+                '& fieldset': {
+                  borderColor: 'grey.700',
+                },
+                '& input': {
+                  color: 'grey.100',
+                },
+                '&:hover fieldset': {
+                  borderColor: 'grey.600',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: 'primary.main',
+                },
+              }
             }}
-          >
-            <Table aria-label="opportunity table" stickyHeader size="small">
-              <TableHead>
+          />
+        </Box>
+
+        <TableContainer
+          component={Paper}
+          elevation={0}
+          sx={{
+            maxHeight: '70vh',
+            overflow: 'auto',
+            backgroundColor: 'grey.900',
+            border: `1px solid grey.800`,
+            borderRadius: 1.5,
+            '& .MuiTable-root': {
+              borderCollapse: 'separate',
+              borderSpacing: '0 2px',
+            }
+          }}
+        >
+          <Table aria-label="opportunity table" stickyHeader size="small">
+            <TableHead>
+              <TableRow
+                sx={{
+                  backgroundColor: 'grey.900',
+                  '& .MuiTableCell-root': {
+                    color: 'grey.400',
+                    fontWeight: 500,
+                    fontSize: '0.875rem',
+                    letterSpacing: '0.01em',
+                    whiteSpace: 'nowrap',
+                    py: 2,
+                    borderBottom: '1px solid',
+                    borderColor: 'grey.800'
+                  }
+                }}
+              >
+                <TableCell>Opportunity</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Status</TableCell>
+                <TableCell>Deadline</TableCell>
+                <TableCell>Apply</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Clicks</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {filteredItems.map((item: DisplayItem) => (
                 <TableRow
+                  key={item.displayId}
                   sx={{
                     backgroundColor: 'grey.800',
+                    transition: 'background-color 0.2s ease',
+                    '&:hover': { 
+                      backgroundColor: 'grey.700',
+                    },
                     '& .MuiTableCell-root': {
-                      color: 'grey.100',
-                      fontWeight: 600,
-                      fontSize: '0.875rem',
-                      letterSpacing: '0.01em',
-                      whiteSpace: 'nowrap',
-                      py: 2,
-                      borderBottom: '1px solid',
-                      borderColor: 'grey.700'
+                      padding: '12px 16px',
+                      border: 'none',
+                      color: 'grey.100'
+                    },
+                    '& + tr': {
+                      marginTop: '2px'
                     }
                   }}
                 >
-                  <TableCell>Opportunity</TableCell>
-                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Status</TableCell>
-                  <TableCell>Deadline</TableCell>
-                  <TableCell>Apply</TableCell>
-                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Clicks</TableCell>
+                  <TableCell>
+                    <Typography variant="body2" component="div" sx={{ color: 'common.white', fontWeight: 500, mb: 0.5 }}>
+                      {(item.isTopic ? item.branch : item.agency) || 'N/A'}:
+                      <span style={{ fontWeight: 400 }}> {item.isTopic ? item.topic_title : item.solicitation_title}</span>
+                    </Typography>
+                    <Typography variant="caption" color="grey.400" component="div">
+                      {item.isTopic ? `Topic #: ${item.topic_number?.trim() || 'N/A'}` : `Solicitation #: ${item.solicitation_number || 'N/A'}`}
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                      <FiberManualRecordIcon sx={{ fontSize: 10, color: 'success.light' }} />
+                      <Typography variant="body2" sx={{ color: 'grey.300' }}>Active</Typography>
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2" sx={{ color: 'grey.300' }}>{formatDate(item.isTopic ? item.topic_closed_date! : item.close_date!)}</Typography>
+                  </TableCell>
+                  <TableCell>
+                    {item.isTopic ? (
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        size="small"
+                        aria-describedby={popoverId}
+                        onClick={(e) => handleClickApplyPopover(e, item as SBIRTopic)}
+                        sx={{ 
+                          textTransform: 'none', 
+                          fontSize: '0.75rem', 
+                          px: 1.5, 
+                          py: 0.5,
+                          '&:hover': {
+                            backgroundColor: 'primary.dark'
+                          }
+                        }}
+                      >
+                        Apply
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outlined"
+                        color="secondary"
+                        size="small"
+                        component="a"
+                        href={item.solicitation_agency_url || '#'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        startIcon={<OpenInNewIcon sx={{ fontSize: 14 }}/>}
+                        disabled={!item.solicitation_agency_url}
+                        sx={{ 
+                          textTransform: 'none', 
+                          fontSize: '0.75rem', 
+                          px: 1.5, 
+                          py: 0.5,
+                          '&:hover': {
+                            borderColor: 'secondary.light',
+                            color: 'secondary.light'
+                          }
+                        }}
+                      >
+                        View
+                      </Button>
+                    )}
+                  </TableCell>
+                  <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+                    <Typography variant="body2" sx={{ color: 'grey.600', fontWeight: 'medium' }}>-</Typography> {/* Click count placeholder */}
+                  </TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody sx={{ '& .MuiTableCell-root': { py: 1.5 } }}>
-                {displayItems.map((item: DisplayItem) => (
-                  <TableRow
-                    key={item.displayId}
-                    sx={{
-                      transition: 'background-color 0.2s ease',
-                      '&:hover': { 
-                        backgroundColor: 'grey.700',
-                        '& .MuiButton-root': {
-                          transform: 'translateY(-1px)',
-                          boxShadow: 1
-                        }
-                      },
-                      '& .MuiTableCell-root': {
-                        padding: '12px 16px',
-                        borderBottom: `1px solid grey.700`
-                      },
-                      '& .MuiButton-root': {
-                        transition: 'all 0.2s ease'
-                      }
-                    }}
-                  >
-                    <TableCell>
-                      <Typography variant="body2" component="div" sx={{ color: 'common.white', fontWeight: 500, mb: 0.5 }}>
-                        {(item.isTopic ? item.branch : item.agency) || 'N/A'}:
-                        <span style={{ fontWeight: 400 }}> {item.isTopic ? item.topic_title : item.solicitation_title}</span>
-                      </Typography>
-                      <Typography variant="caption" color="grey.400" component="div">
-                        {item.isTopic ? `Topic #: ${item.topic_number?.trim() || 'N/A'}` : `Solicitation #: ${item.solicitation_number || 'N/A'}`}
-                      </Typography>
-                    </TableCell>
-                    <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                        <FiberManualRecordIcon sx={{ fontSize: 10, color: 'success.light' }} />
-                        <Typography variant="body2" sx={{ color: 'grey.300' }}>Active</Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ color: 'grey.300' }}>{formatDate(item.isTopic ? item.topic_closed_date! : item.close_date!)}</Typography>
-                    </TableCell>
-                    <TableCell>
-                      {item.isTopic ? (
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          size="small"
-                          aria-describedby={popoverId}
-                          onClick={(e) => handleClickApplyPopover(e, item as SBIRTopic)}
-                          sx={{ 
-                            textTransform: 'none', 
-                            fontSize: '0.75rem', 
-                            px: 1.5, 
-                            py: 0.5,
-                            '&:hover': {
-                              backgroundColor: 'primary.dark'
-                            }
-                          }}
-                        >
-                          Apply
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="outlined"
-                          color="secondary"
-                          size="small"
-                          component="a"
-                          href={item.solicitation_agency_url || '#'}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          startIcon={<OpenInNewIcon sx={{ fontSize: 14 }}/>}
-                          disabled={!item.solicitation_agency_url}
-                          sx={{ 
-                            textTransform: 'none', 
-                            fontSize: '0.75rem', 
-                            px: 1.5, 
-                            py: 0.5,
-                            '&:hover': {
-                              borderColor: 'secondary.light',
-                              color: 'secondary.light'
-                            }
-                          }}
-                        >
-                          View
-                        </Button>
-                      )}
-                    </TableCell>
-                    <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
-                      <Typography variant="body2" sx={{ color: 'grey.600', fontWeight: 'medium' }}>-</Typography> {/* Click count placeholder */}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
 
         {/* Popover remains the same */}
         <Popover
