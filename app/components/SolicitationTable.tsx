@@ -268,7 +268,6 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
                     {item.isTopic ? (
                       <Button
                         variant="contained"
-                        color="primary"
                         size="small"
                         aria-describedby={popoverId}
                         onClick={(e) => handleClickApplyPopover(e, item as SBIRTopic)}
@@ -277,9 +276,10 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
                           fontSize: '0.75rem', 
                           px: 1.5, 
                           py: 0.5,
-                          bgcolor: 'primary.main',
+                          bgcolor: '#cc0100',
+                          color: 'common.white',
                           '&:hover': {
-                            bgcolor: 'primary.dark'
+                            bgcolor: '#a30000'
                           }
                         }}
                       >
@@ -349,7 +349,7 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
                             justifyContent: 'center',
                             minWidth: '20px',
                             height: '20px',
-                            bgcolor: discussionCounts[item.isTopic ? item.topic_number || '' : item.solicitation_number || ''] > 0 ? 'primary.main' : 'grey.600',
+                            bgcolor: discussionCounts[item.isTopic ? item.topic_number || '' : item.solicitation_number || ''] > 0 ? '#002e6d' : 'grey.600',
                             color: 'common.white',
                             borderRadius: '10px',
                             fontSize: '0.75rem',
