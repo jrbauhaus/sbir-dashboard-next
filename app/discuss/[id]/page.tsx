@@ -1,12 +1,11 @@
 import { SBIRApiService } from '@/lib/sbirService';
 import { DiscussionView } from '@/app/components/DiscussionView';
 
-type Props = {
+interface PageProps {
   params: { id: string };
-  searchParams: { [key: string]: string | string[] | undefined };
-};
+}
 
-export default async function DiscussPage({ params }: Props) {
+export default async function DiscussPage({ params }: PageProps) {
   const sbirService = new SBIRApiService();
   const solicitation = await sbirService.getSolicitation(params.id);
 
