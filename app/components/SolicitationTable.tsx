@@ -1,17 +1,19 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Paper, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Button, Accordion, AccordionSummary, AccordionDetails,
-  Popover, IconButton, Tooltip, TextField, InputAdornment
+  Popover, IconButton, Tooltip, TextField, InputAdornment, Link
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import SearchIcon from '@mui/icons-material/Search';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import { SBIRSolicitation, SBIRTopic } from '@/types/sbir'; // Updated import path
+import NextLink from 'next/link';
 
 // Helper function for consistent date formatting (moved inside or to a util file)
 const formatDate = (dateString: string): string => {
@@ -43,6 +45,8 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
   const [currentTopic, setCurrentTopic] = useState<SBIRTopic | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [discussionCounts, setDiscussionCounts] = useState<Record<string, number>>({});
+  const [isLoadingCounts, setIsLoadingCounts] = useState(false);
 
   // Process the solicitations prop to create displayItems
   const displayItems: DisplayItem[] = Array.isArray(solicitations)
@@ -75,6 +79,41 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
     item.solicitation_title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.topic_number?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Fetch all discussion counts at once
+  useEffect(() => {
+    let isMounted = true;
+    const controller = new AbortController();
+
+    const fetchCounts = async () => {
+      try {
+        setIsLoadingCounts(true);
+        const response = await fetch('/api/discussions', {
+          signal: controller.signal
+        });
+        
+        if (!response.ok || !isMounted) return;
+        
+        const data = await response.json();
+        setDiscussionCounts(data.counts);
+      } catch (error: unknown) {
+        if (error instanceof Error && error.name !== 'AbortError') {
+          console.warn('Error fetching discussion counts:', error);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingCounts(false);
+        }
+      }
+    };
+
+    fetchCounts();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
+  }, []); // Only fetch once when component mounts
 
   const handleClickApplyPopover = (event: React.MouseEvent<HTMLButtonElement>, topic: SBIRTopic) => {
     setAnchorEl(event.currentTarget);
@@ -184,7 +223,7 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
                 <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Status</TableCell>
                 <TableCell>Deadline</TableCell>
                 <TableCell>Apply</TableCell>
-                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Clicks</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Discussion</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -238,8 +277,9 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
                           fontSize: '0.75rem', 
                           px: 1.5, 
                           py: 0.5,
+                          bgcolor: 'primary.main',
                           '&:hover': {
-                            backgroundColor: 'primary.dark'
+                            bgcolor: 'primary.dark'
                           }
                         }}
                       >
@@ -261,9 +301,11 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
                           fontSize: '0.75rem', 
                           px: 1.5, 
                           py: 0.5,
+                          borderColor: 'grey.600',
+                          color: 'grey.100',
                           '&:hover': {
-                            borderColor: 'secondary.light',
-                            color: 'secondary.light'
+                            borderColor: 'grey.400',
+                            bgcolor: 'rgba(255, 255, 255, 0.05)'
                           }
                         }}
                       >
@@ -271,8 +313,56 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
                       </Button>
                     )}
                   </TableCell>
-                  <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
-                    <Typography variant="body2" sx={{ color: 'grey.600', fontWeight: 'medium' }}>-</Typography> {/* Click count placeholder */}
+                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+                    <Link
+                      component={NextLink}
+                      href={`/discuss/${item.isTopic ? item.topic_number : item.solicitation_number}`}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        color: 'grey.100',
+                        textDecoration: 'none',
+                        bgcolor: 'grey.700',
+                        px: 1.5,
+                        py: 0.5,
+                        borderRadius: 1,
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          bgcolor: 'grey.600',
+                          color: 'common.white'
+                        }
+                      }}
+                    >
+                      <ChatBubbleOutlineIcon sx={{ fontSize: 16 }} />
+                      <Typography variant="body2" component="span" sx={{ 
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.5
+                      }}>
+                        Discussion
+                        <Box
+                          component="span"
+                          sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            minWidth: '20px',
+                            height: '20px',
+                            bgcolor: discussionCounts[item.isTopic ? item.topic_number || '' : item.solicitation_number || ''] > 0 ? 'primary.main' : 'grey.600',
+                            color: 'common.white',
+                            borderRadius: '10px',
+                            fontSize: '0.75rem',
+                            fontWeight: 'medium',
+                            px: 0.75,
+                            opacity: isLoadingCounts ? 0.7 : 1,
+                            transition: 'opacity 0.2s ease'
+                          }}
+                        >
+                          {discussionCounts[item.isTopic ? item.topic_number || '' : item.solicitation_number || ''] || '0'}
+                        </Box>
+                      </Typography>
+                    </Link>
                   </TableCell>
                 </TableRow>
               ))}

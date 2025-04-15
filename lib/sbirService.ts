@@ -101,6 +101,42 @@ export class SBIRApiService {
      return finalSolicitations;
    }
 
+   async getSolicitation(id: string): Promise<SBIRSolicitation | null> {
+     try {
+       console.log(`[API Service] Fetching solicitation with ID: ${id}`);
+       // First try to get it from the list of active solicitations
+       const allSolicitations = await this.getActiveSolicitationsWithTopics();
+       
+       // Look for either a solicitation or topic with matching ID
+       const solicitation = allSolicitations.find(sol => {
+         if (sol.solicitation_number === id) return true;
+         if (sol.solicitation_topics?.some(topic => topic.topic_number === id)) return true;
+         return false;
+       });
+
+       if (solicitation) {
+         // If it's a topic ID, filter to just that topic
+         if (solicitation.solicitation_topics?.length) {
+           const matchingTopic = solicitation.solicitation_topics.find(
+             topic => topic.topic_number === id
+           );
+           if (matchingTopic) {
+             return {
+               ...solicitation,
+               solicitation_topics: [matchingTopic]
+             };
+           }
+         }
+         return solicitation;
+       }
+
+       return null;
+     } catch (error) {
+       this.handleApiError(error, `getSolicitation - fetch for ID ${id}`);
+       return null;
+     }
+   }
+
    private handleApiError(error: any, context?: string): void {
      const message = context ? `SBIR API Error (${context}):` : 'SBIR API Error:';
      console.error(message, error instanceof Error ? error.message : error);
