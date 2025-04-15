@@ -102,8 +102,11 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
   console.log('[SolicitationTable Client Component] Processed displayItems:', displayItems);
 
   return (
-    <Box sx={{ bgcolor: 'grey.900', minHeight: 'calc(100vh - 120px)' /* Adjust based on header */ }}>
-      {/* Header moved to layout or page level */}
+    <Box sx={{ 
+      bgcolor: 'grey.900', 
+      minHeight: 'calc(100vh - 120px)',
+      pt: { xs: 2, sm: 3 }
+    }}>
       {/* Inner Content Container */}
       <Box sx={{ px: { xs: 2, sm: 2, md: 3 } }}>
         {displayItems.length === 0 ? (
@@ -124,7 +127,21 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
           >
             <Table aria-label="opportunity table" stickyHeader size="small">
               <TableHead>
-                <TableRow sx={{ '& .MuiTableCell-head': { backgroundColor: 'grey.800', borderBottom: `1px solid grey.600`, color: 'grey.400', fontWeight: 500, padding: '12px 16px', fontSize: '0.8rem' } }}>
+                <TableRow
+                  sx={{
+                    backgroundColor: 'grey.800',
+                    '& .MuiTableCell-root': {
+                      color: 'grey.100',
+                      fontWeight: 600,
+                      fontSize: '0.875rem',
+                      letterSpacing: '0.01em',
+                      whiteSpace: 'nowrap',
+                      py: 2,
+                      borderBottom: '1px solid',
+                      borderColor: 'grey.700'
+                    }
+                  }}
+                >
                   <TableCell>Opportunity</TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Status</TableCell>
                   <TableCell>Deadline</TableCell>
@@ -132,15 +149,25 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Clicks</TableCell>
                 </TableRow>
               </TableHead>
-              <TableBody>
+              <TableBody sx={{ '& .MuiTableCell-root': { py: 1.5 } }}>
                 {displayItems.map((item: DisplayItem) => (
                   <TableRow
                     key={item.displayId}
                     sx={{
-                      '&:hover': { backgroundColor: 'grey.700' },
+                      transition: 'background-color 0.2s ease',
+                      '&:hover': { 
+                        backgroundColor: 'grey.700',
+                        '& .MuiButton-root': {
+                          transform: 'translateY(-1px)',
+                          boxShadow: 1
+                        }
+                      },
                       '& .MuiTableCell-root': {
                         padding: '12px 16px',
                         borderBottom: `1px solid grey.700`
+                      },
+                      '& .MuiButton-root': {
+                        transition: 'all 0.2s ease'
                       }
                     }}
                   >
@@ -169,8 +196,16 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
                           color="primary"
                           size="small"
                           aria-describedby={popoverId}
-                          onClick={(e) => handleClickApplyPopover(e, item as SBIRTopic)} // Cast needed if DisplayItem doesn't fully satisfy SBIRTopic
-                          sx={{ textTransform: 'none', fontSize: '0.75rem', px: 1.5, py: 0.5 }}
+                          onClick={(e) => handleClickApplyPopover(e, item as SBIRTopic)}
+                          sx={{ 
+                            textTransform: 'none', 
+                            fontSize: '0.75rem', 
+                            px: 1.5, 
+                            py: 0.5,
+                            '&:hover': {
+                              backgroundColor: 'primary.dark'
+                            }
+                          }}
                         >
                           Apply
                         </Button>
@@ -185,7 +220,16 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
                           rel="noopener noreferrer"
                           startIcon={<OpenInNewIcon sx={{ fontSize: 14 }}/>}
                           disabled={!item.solicitation_agency_url}
-                          sx={{ textTransform: 'none', fontSize: '0.75rem', px: 1.5, py: 0.5 }}
+                          sx={{ 
+                            textTransform: 'none', 
+                            fontSize: '0.75rem', 
+                            px: 1.5, 
+                            py: 0.5,
+                            '&:hover': {
+                              borderColor: 'secondary.light',
+                              color: 'secondary.light'
+                            }
+                          }}
                         >
                           View
                         </Button>

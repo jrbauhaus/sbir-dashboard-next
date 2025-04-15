@@ -16,6 +16,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "SBIR Dashboard",
   description: "Dashboard for viewing SBIR/STTR solicitations",
+  icons: {
+    icon: '/sbir_dashboard-icon.svg',
+    shortcut: '/sbir_dashboard-icon.svg',
+  }
 };
 
 export default function RootLayout({

@@ -15,18 +15,30 @@ export default async function HomePage() {
 
   return (
     <main>
-      {/* --- Header --- (Consider moving to a layout component) */}
-      <Box sx={{ display: 'flex', justifyContent: 'center', pt: { xs: 2, sm: 3, md: 4 }, mb: 4, bgcolor: 'grey.900' }}>
-         {/* Assuming logo is in public folder */}
-         <Box
-           component="img"
-           src="/sbir_dasboard-logo.png" // Make sure this path is correct in public/
-           alt="SBIR Dashboard Logo"
-           sx={{ maxHeight: '60px', width: 'auto' }}
-         />
-       </Box>
+      {/* Header */}
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        pt: { xs: 2, sm: 3 }, 
+        pb: { xs: 1, sm: 2 },
+        bgcolor: 'grey.800',
+        borderBottom: '1px solid',
+        borderColor: 'grey.700',
+        boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
+      }}>
+        <Box
+          component="img"
+          src="/sbir_dasboard-logo.png"
+          alt="SBIR Dashboard Logo"
+          sx={{ 
+            height: '50px', 
+            width: 'auto',
+            filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2))'
+          }}
+        />
+      </Box>
 
-      {/* Render the client component, passing data */}
+      {/* Main content */}
       <SolicitationTable solicitations={solicitations} />
     </main>
   );
