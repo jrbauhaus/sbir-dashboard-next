@@ -14,6 +14,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import { SBIRSolicitation, SBIRTopic } from '@/types/sbir'; // Updated import path
 import NextLink from 'next/link';
+import { trackEvent } from '@/lib/trackEvent'; // Import the tracking function
 
 // Helper function for consistent date formatting (moved inside or to a util file)
 const formatDate = (dateString: string): string => {
@@ -116,6 +117,7 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
   }, []); // Only fetch once when component mounts
 
   const handleClickApplyPopover = (event: React.MouseEvent<HTMLButtonElement>, topic: SBIRTopic) => {
+    trackEvent('apply_popover_opened', { topic_number: topic.topic_number }); // Track popover open
     setAnchorEl(event.currentTarget);
     setCurrentTopic(topic);
   };
@@ -129,6 +131,7 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
     if (typeof window === 'undefined' || !currentTopic?.topic_number) {
       return;
     }
+    trackEvent('apply_copy_topic_click', { topic_number: currentTopic.topic_number }); // Track copy click
 
     try {
       const topicNumber = currentTopic.topic_number.trim();
@@ -317,6 +320,10 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
                     <Link
                       component={NextLink}
                       href={`/discuss/${item.isTopic ? item.topic_number : item.solicitation_number}`}
+                      onClick={() => trackEvent('discussion_link_click', { 
+                        id: item.isTopic ? item.topic_number : item.solicitation_number, 
+                        type: item.isTopic ? 'topic' : 'solicitation' 
+                      })} // Track discussion link click
                       sx={{
                         display: 'flex',
                         alignItems: 'center',

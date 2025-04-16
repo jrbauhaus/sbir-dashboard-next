@@ -1,10 +1,12 @@
 'use client';
 
+import React, { useEffect } from 'react';
 import { Box, Typography, Paper, Button } from '@mui/material';
 import { GiscusComments } from '@/app/components/GiscusComments';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import Link from 'next/link';
 import { SBIRSolicitation } from '@/types/sbir';
+import { trackEvent } from '@/lib/trackEvent';
 
 interface DiscussionViewProps {
   id: string;
@@ -14,18 +16,18 @@ interface DiscussionViewProps {
 export function DiscussionView({ id, solicitation }: DiscussionViewProps) {
   // Find the matching topic if this is a topic ID
   const topic = solicitation?.solicitation_topics?.find(t => t.topic_number === id);
-  
-  // Determine what title to show
-  const displayTitle = topic ? topic.topic_title : solicitation?.solicitation_title;
-  const displaySubtitle = topic ? (
-    <>
-      {solicitation?.agency} Topic #{topic.topic_number}
-      <br />
-      {solicitation?.solicitation_title}
-    </>
-  ) : (
-    `${solicitation?.agency} Solicitation #${solicitation?.solicitation_number}`
-  );
+
+  useEffect(() => {
+    // Determine the correct title for tracking
+    const trackTitle = topic?.topic_title || solicitation?.solicitation_title || 'Unknown Title';
+    trackEvent('discussion_view', { id: id, title: trackTitle });
+  }, [id, solicitation, topic]); // Add topic to dependency array
+
+  // Determine display title and subtitle
+  const displayTitle = topic?.topic_title || solicitation?.solicitation_title || 'Discussion';
+  const displaySubtitle = topic ? 
+    `Topic ${topic.topic_number} (Solicitation: ${solicitation?.solicitation_number})` : 
+    `Solicitation ${solicitation?.solicitation_number}`;
 
   return (
     <Box sx={{ 
