@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Paper, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Button, Accordion, AccordionSummary, AccordionDetails,
-  Popover, IconButton, Tooltip, TextField, InputAdornment, Link
+  Popover, IconButton, Tooltip, TextField, InputAdornment, Link, Select, MenuItem, FormControl, InputLabel
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
@@ -46,6 +46,7 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
   const [currentTopic, setCurrentTopic] = useState<SBIRTopic | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedBranch, setSelectedBranch] = useState('');
   const [discussionCounts, setDiscussionCounts] = useState<Record<string, number>>({});
   const [isLoadingCounts, setIsLoadingCounts] = useState(false);
 
@@ -74,12 +75,20 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
     })
     : [];
   
-  // Filter items based on search
-  const filteredItems = displayItems.filter(item => 
-    item.topic_title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.solicitation_title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.topic_number?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Get unique branch names for the filter dropdown
+  const uniqueBranches = Array.from(new Set(displayItems.map(item => item.branch).filter(Boolean)));
+
+  // Filter items based on search AND selected branch
+  const filteredItems = displayItems.filter(item => {
+    const searchMatch = 
+      item.topic_title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.solicitation_title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.topic_number?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const branchMatch = !selectedBranch || item.branch === selectedBranch;
+
+    return searchMatch && branchMatch;
+  });
 
   // Fetch all discussion counts at once
   useEffect(() => {
@@ -157,8 +166,9 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
       pt: { xs: 2, sm: 3 }
     }}>
       <Box sx={{ px: { xs: 2, sm: 2, md: 3 } }}>
-        {/* Search Bar */}
-        <Box sx={{ mb: 3 }}>
+        {/* Search and Filter Row */}
+        <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+          {/* Search Bar */}
           <TextField
             fullWidth
             variant="outlined"
@@ -188,6 +198,34 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
               }
             }}
           />
+          {/* Branch Filter */}
+          <FormControl variant="outlined" sx={{ minWidth: 200, bgcolor: 'grey.800', borderRadius: 1 }}>
+            <InputLabel 
+              id="branch-filter-label" 
+              sx={{ color: 'grey.400', '&.Mui-focused': { color: 'primary.main' } }}
+            >
+              Branch
+            </InputLabel>
+            <Select
+              labelId="branch-filter-label"
+              id="branch-filter"
+              value={selectedBranch}
+              onChange={(e) => setSelectedBranch(e.target.value)}
+              label="Branch"
+              sx={{
+                color: 'grey.100',
+                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'grey.700' },
+                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'grey.600' },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'primary.main' },
+                '& .MuiSelect-icon': { color: 'grey.400' },
+              }}
+            >
+              <MenuItem value=""><em>All Branches</em></MenuItem>
+              {uniqueBranches.sort().map(branch => (
+                <MenuItem key={branch} value={branch}>{branch}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Box>
 
         <TableContainer
@@ -327,6 +365,7 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
                       sx={{
                         display: 'flex',
                         alignItems: 'center',
+                        maxWidth: 'fit-content',
                         gap: 0.5,
                         color: 'grey.100',
                         textDecoration: 'none',
@@ -399,11 +438,18 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
             <Tooltip title="Copy Topic # and Go to DoD Search">
               <Button
                 variant="contained"
-                color="primary"
                 size="small"
                 startIcon={<ContentCopyIcon sx={{ fontSize: 16 }} />}
                 onClick={handleCopyTopic}
-                sx={{ textTransform: 'none', fontSize: '0.75rem' }}
+                sx={{ 
+                  bgcolor: '#002e6d',
+                  color: 'common.white',
+                  '&:hover': {
+                    bgcolor: '#001f4d'
+                  },
+                  textTransform: 'none', 
+                  fontSize: '0.75rem' 
+                }}
               >
                 Copy Topic #
               </Button>
