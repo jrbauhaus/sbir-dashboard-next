@@ -21,10 +21,10 @@ export default async function HomePage() {
         justifyContent: 'center', 
         pt: { xs: 2, sm: 3 }, 
         pb: { xs: 1, sm: 2 },
-        bgcolor: 'grey.800',
+        bgcolor: 'background.default',
         borderBottom: '1px solid',
-        borderColor: 'grey.700',
-        boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
+        borderColor: 'divider',
+        boxShadow: 'none'
       }}>
         <Box
           component="img"
@@ -33,7 +33,7 @@ export default async function HomePage() {
           sx={{ 
             height: '50px', 
             width: 'auto',
-            filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2))'
+            filter: 'none'
           }}
         />
       </Box>

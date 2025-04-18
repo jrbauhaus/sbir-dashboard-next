@@ -1,18 +1,21 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Space_Grotesk, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import ThemeRegistry from '@/components/ThemeRegistry/ThemeRegistry';
 import { Analytics } from "@vercel/analytics/react";
-import { Alert, Box, Typography } from '@mui/material';
+import { Alert, Box, Typography, Paper } from '@mui/material';
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
   subsets: ["latin"],
+  display: 'swap',
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const ibmPlexMono = IBM_Plex_Mono({
+  variable: "--font-ibm-plex-mono",
+  weight: ['400', '700'],
   subsets: ["latin"],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -34,24 +37,27 @@ export default function RootLayout({
 
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <Box sx={{ position: 'sticky', top: 0, zIndex: 1100, width: '100%' }}>
-          <Alert
-            severity="warning"
-            variant="filled"
-            sx={{ borderRadius: 0, justifyContent: 'center', textAlign: 'center', display: 'flex', alignItems: 'center' }}
-          >
-            <Box>
-              <Typography variant="body2" component="span">
-                {afwerxUpdate}
-              </Typography>
-              <Box sx={{ height: '0.5em' }} />
-              <Typography variant="body2" component="span" sx={{ fontWeight: 'bold' }}>
-                {filterGuidance}
-              </Typography>
-            </Box>
-          </Alert>
-        </Box>
+      <body className={`${spaceGrotesk.variable} ${ibmPlexMono.variable}`}>
+        <Paper 
+          elevation={0} 
+          square 
+          sx={{ 
+            py: 1, 
+            px: 2, 
+            bgcolor: 'background.paper', 
+            borderBottom: 1, 
+            borderColor: 'divider', 
+            textAlign: 'center' 
+          }}
+        >
+          <Typography variant="body2" component="span" sx={{ color: 'text.secondary' }}>
+            {afwerxUpdate}
+          </Typography>
+          <Box sx={{ height: '0.5em' }} /> 
+          <Typography variant="body2" component="span" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+            {filterGuidance}
+          </Typography>
+        </Paper>
         <ThemeRegistry>{children}</ThemeRegistry>
         <Analytics />
       </body>

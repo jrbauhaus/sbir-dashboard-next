@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import { Box, Typography, Paper, Button } from '@mui/material';
 import { GiscusComments } from '@/app/components/GiscusComments';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import Link from 'next/link';
+import NextLink from 'next/link';
 import { SBIRSolicitation } from '@/types/sbir';
 import { trackEvent } from '@/lib/trackEvent';
 
@@ -31,20 +31,22 @@ export function DiscussionView({ id, solicitation }: DiscussionViewProps) {
 
   return (
     <Box sx={{ 
-      bgcolor: 'grey.900',
+      bgcolor: 'background.default',
       minHeight: '100vh',
       py: { xs: 2, sm: 3 },
       px: { xs: 2, sm: 3, md: 4 }
     }}>
       <Button
-        component={Link}
+        component={NextLink}
         href="/"
         startIcon={<ArrowBackIcon />}
         sx={{
-          color: 'grey.300',
+          color: 'text.secondary',
           mb: 2,
+          textTransform: 'none',
           '&:hover': {
-            color: 'common.white',
+            color: 'text.primary',
+            bgcolor: 'action.hover'
           }
         }}
       >
@@ -54,12 +56,12 @@ export function DiscussionView({ id, solicitation }: DiscussionViewProps) {
       <Paper
         elevation={0}
         sx={{
-          bgcolor: 'grey.800',
+          bgcolor: 'background.paper',
           p: { xs: 2, sm: 3 },
           mb: 3,
           border: '1px solid',
-          borderColor: 'grey.700',
-          borderRadius: 1.5
+          borderColor: 'divider',
+          borderRadius: 0.5
         }}
       >
         <Typography variant="h5" component="h1" sx={{ color: 'common.white', mb: 1 }}>
@@ -73,11 +75,11 @@ export function DiscussionView({ id, solicitation }: DiscussionViewProps) {
       <Paper
         elevation={0}
         sx={{
-          bgcolor: 'grey.800',
+          bgcolor: 'background.paper',
           p: { xs: 2, sm: 3 },
           border: '1px solid',
-          borderColor: 'grey.700',
-          borderRadius: 1.5
+          borderColor: 'divider',
+          borderRadius: 0.5
         }}
       >
         <GiscusComments />

@@ -15,6 +15,7 @@ import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import { SBIRSolicitation, SBIRTopic } from '@/types/sbir'; // Updated import path
 import NextLink from 'next/link';
 import { trackEvent } from '@/lib/trackEvent'; // Import the tracking function
+import { spaceGrotesk, ibmPlexMono } from '@/components/ThemeRegistry/theme'; // Corrected import path
 
 // Helper function for consistent date formatting (moved inside or to a util file)
 const formatDate = (dateString: string): string => {
@@ -182,15 +183,16 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
                 </InputAdornment>
               ),
               sx: {
-                bgcolor: 'grey.800',
+                bgcolor: 'background.paper',
+                borderRadius: 0.5,
                 '& fieldset': {
-                  borderColor: 'grey.700',
+                  borderColor: 'divider',
                 },
                 '& input': {
-                  color: 'grey.100',
+                  color: 'text.primary',
                 },
                 '&:hover fieldset': {
-                  borderColor: 'grey.600',
+                  borderColor: 'text.secondary',
                 },
                 '&.Mui-focused fieldset': {
                   borderColor: 'primary.main',
@@ -199,10 +201,10 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
             }}
           />
           {/* Branch Filter */}
-          <FormControl variant="outlined" sx={{ minWidth: 200, bgcolor: 'grey.800', borderRadius: 1 }}>
+          <FormControl variant="outlined" sx={{ minWidth: 200, bgcolor: 'background.paper', borderRadius: 0.5 }}>
             <InputLabel 
               id="branch-filter-label" 
-              sx={{ color: 'grey.400', '&.Mui-focused': { color: 'primary.main' } }}
+              sx={{ color: 'grey.400', '&.Mui-focused': { color: 'secondary.main' } }}
             >
               Branch
             </InputLabel>
@@ -213,11 +215,12 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
               onChange={(e) => setSelectedBranch(e.target.value)}
               label="Branch"
               sx={{
-                color: 'grey.100',
-                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'grey.700' },
-                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'grey.600' },
-                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'primary.main' },
-                '& .MuiSelect-icon': { color: 'grey.400' },
+                color: 'text.primary',
+                borderRadius: 0.5,
+                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' },
+                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'text.secondary' },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'secondary.main' },
+                '& .MuiSelect-icon': { color: 'text.secondary' },
               }}
             >
               <MenuItem value=""><em>All Branches</em></MenuItem>
@@ -231,40 +234,36 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
         <TableContainer
           component={Paper}
           elevation={0}
-          sx={{
+          sx={{ 
             maxHeight: '70vh',
             overflow: 'auto',
-            backgroundColor: 'grey.900',
-            border: `1px solid grey.800`,
-            borderRadius: 1.5,
-            '& .MuiTable-root': {
-              borderCollapse: 'separate',
-              borderSpacing: '0 2px',
-            }
+            backgroundColor: 'transparent', // Transparent container background
+            border: 'none', // Remove outer border
           }}
         >
-          <Table aria-label="opportunity table" stickyHeader size="small">
+          <Table aria-label="opportunity table" stickyHeader size="small" sx={{ borderCollapse: 'collapse' }}>
             <TableHead>
               <TableRow
                 sx={{
-                  backgroundColor: 'grey.900',
                   '& .MuiTableCell-root': {
-                    color: 'grey.400',
+                    color: 'text.secondary',
                     fontWeight: 500,
-                    fontSize: '0.875rem',
-                    letterSpacing: '0.01em',
+                    fontSize: '0.8rem',
+                    fontFamily: ibmPlexMono,
+                    letterSpacing: '0.05em',
                     whiteSpace: 'nowrap',
-                    py: 2,
-                    borderBottom: '1px solid',
-                    borderColor: 'grey.800'
+                    py: 1, // Slightly reduce padding
+                    border: '1px solid', // Apply border to all sides
+                    borderColor: 'divider', 
+                    textAlign: 'left', // Ensure left alignment
                   }
                 }}
               >
                 <TableCell>Opportunity</TableCell>
-                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Status</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, textAlign: 'center' }}>Status</TableCell>
                 <TableCell>Deadline</TableCell>
                 <TableCell>Apply</TableCell>
-                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Discussion</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, textAlign: 'center' }}>Discussion</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -272,143 +271,185 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
                 <TableRow
                   key={item.displayId}
                   sx={{
-                    backgroundColor: 'grey.800',
-                    transition: 'background-color 0.2s ease',
+                    backgroundColor: 'transparent', // Make row background transparent
+                    transition: 'background-color 0.1s ease', // Faster transition
                     '&:hover': { 
-                      backgroundColor: 'grey.700',
+                      backgroundColor: 'action.hover', // Use theme hover
                     },
                     '& .MuiTableCell-root': {
-                      padding: '12px 16px',
-                      border: 'none',
-                      color: 'grey.100'
+                      padding: '8px 12px', // Adjust padding
+                      border: '1px solid', // Apply border to all sides
+                      borderColor: 'divider',
+                      color: 'text.primary',
+                      verticalAlign: 'top', // Align content top
                     },
-                    '& + tr': {
-                      marginTop: '2px'
-                    }
                   }}
                 >
                   <TableCell>
-                    <Typography variant="body2" component="div" sx={{ color: 'common.white', fontWeight: 500, mb: 0.5 }}>
+                    <Typography variant="body2" component="div" sx={{ color: 'text.primary', fontWeight: 500, mb: 0.5 }}>
                       {(item.isTopic ? item.branch : item.agency) || 'N/A'}:
                       <span style={{ fontWeight: 400 }}> {item.isTopic ? item.topic_title : item.solicitation_title}</span>
                     </Typography>
-                    <Typography variant="caption" color="grey.400" component="div">
+                    <Typography variant="caption" color="text.secondary" component="div" sx={{ fontFamily: ibmPlexMono }}>
                       {item.isTopic ? `Topic #: ${item.topic_number?.trim() || 'N/A'}` : `Solicitation #: ${item.solicitation_number || 'N/A'}`}
                     </Typography>
                   </TableCell>
-                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                      <FiberManualRecordIcon sx={{ fontSize: 10, color: 'success.light' }} />
-                      <Typography variant="body2" sx={{ color: 'grey.300' }}>Active</Typography>
+                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, textAlign: 'center', verticalAlign: 'middle', padding: 0 }}>
+                    {/* Wrapper Box for centering */}
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      width: '100%', 
+                      minHeight: theme => theme.spacing(7)
+                    }}>
+                      {/* Inner Box for icon + text (keep inline-flex) */}
+                      <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75 }}>
+                        <FiberManualRecordIcon sx={{ fontSize: 10, color: 'secondary.main' }} /> 
+                        <Typography variant="body2" sx={{ color: 'text.secondary', fontFamily: ibmPlexMono }}>Active</Typography>
+                      </Box>
                     </Box>
                   </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" sx={{ color: 'grey.300' }}>{formatDate(item.isTopic ? item.topic_closed_date! : item.close_date!)}</Typography>
+                  <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', padding: 0 }}>
+                    {/* Wrapper Box for centering */}
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      width: '100%', 
+                      minHeight: theme => theme.spacing(7)
+                    }}>
+                      <Typography variant="body2" sx={{ color: 'text.secondary', fontFamily: ibmPlexMono }}>{formatDate(item.isTopic ? item.topic_closed_date! : item.close_date!)}</Typography>
+                    </Box>
                   </TableCell>
-                  <TableCell>
-                    {item.isTopic ? (
-                      <Button
-                        variant="contained"
-                        size="small"
-                        aria-describedby={popoverId}
-                        onClick={(e) => handleClickApplyPopover(e, item as SBIRTopic)}
-                        sx={{ 
-                          textTransform: 'none', 
-                          fontSize: '0.75rem', 
-                          px: 1.5, 
-                          py: 0.5,
-                          bgcolor: '#cc0100',
-                          color: 'common.white',
-                          '&:hover': {
-                            bgcolor: '#a30000'
-                          }
-                        }}
-                      >
-                        Apply
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="outlined"
-                        color="secondary"
-                        size="small"
-                        component="a"
-                        href={item.solicitation_agency_url || '#'}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        startIcon={<OpenInNewIcon sx={{ fontSize: 14 }}/>}
-                        disabled={!item.solicitation_agency_url}
-                        sx={{ 
-                          textTransform: 'none', 
-                          fontSize: '0.75rem', 
-                          px: 1.5, 
-                          py: 0.5,
-                          borderColor: 'grey.600',
-                          color: 'grey.100',
-                          '&:hover': {
-                            borderColor: 'grey.400',
-                            bgcolor: 'rgba(255, 255, 255, 0.05)'
-                          }
-                        }}
-                      >
-                        View
-                      </Button>
-                    )}
-                  </TableCell>
-                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
-                    <Link
-                      component={NextLink}
-                      href={`/discuss/${item.isTopic ? item.topic_number : item.solicitation_number}`}
-                      onClick={() => trackEvent('discussion_link_click', { 
-                        id: item.isTopic ? item.topic_number : item.solicitation_number, 
-                        type: item.isTopic ? 'topic' : 'solicitation' 
-                      })} // Track discussion link click
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        maxWidth: 'fit-content',
-                        gap: 0.5,
-                        color: 'grey.100',
-                        textDecoration: 'none',
-                        bgcolor: 'grey.700',
-                        px: 1.5,
-                        py: 0.5,
-                        borderRadius: 1,
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
-                          bgcolor: 'grey.600',
-                          color: 'common.white'
-                        }
-                      }}
-                    >
-                      <ChatBubbleOutlineIcon sx={{ fontSize: 16 }} />
-                      <Typography variant="body2" component="span" sx={{ 
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 0.5
-                      }}>
-                        Discussion
-                        <Box
-                          component="span"
-                          sx={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            minWidth: '20px',
-                            height: '20px',
-                            bgcolor: discussionCounts[item.isTopic ? item.topic_number || '' : item.solicitation_number || ''] > 0 ? '#002e6d' : 'grey.600',
-                            color: 'common.white',
-                            borderRadius: '10px',
+                  <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', padding: 0 }}>
+                    {/* Wrapper Box for centering */}
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      width: '100%', 
+                      minHeight: theme => theme.spacing(7) // Set minHeight 
+                    }}>
+                      {item.isTopic ? (
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          aria-describedby={popoverId}
+                          onClick={(e) => handleClickApplyPopover(e, item as SBIRTopic)}
+                          sx={{ 
+                            textTransform: 'none',
                             fontSize: '0.75rem',
-                            fontWeight: 'medium',
-                            px: 0.75,
-                            opacity: isLoadingCounts ? 0.7 : 1,
-                            transition: 'opacity 0.2s ease'
+                            px: 1.5, 
+                            borderColor: '#EF5350', // Lighter Red border
+                            color: '#EF5350', // Lighter Red text
+                            borderRadius: 0.5,
+                            '&:hover': {
+                              borderColor: '#E53935', // Slightly darker Lighter Red border
+                              color: '#E53935', // Slightly darker Lighter Red text
+                              bgcolor: 'action.hover' 
+                            }
                           }}
                         >
-                          {discussionCounts[item.isTopic ? item.topic_number || '' : item.solicitation_number || ''] || '0'}
-                        </Box>
-                      </Typography>
-                    </Link>
+                          Apply
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          component="a"
+                          href={item.solicitation_agency_url || '#'}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          startIcon={<OpenInNewIcon sx={{ fontSize: 14 }}/>}
+                          disabled={!item.solicitation_agency_url}
+                          sx={{ 
+                            textTransform: 'none', 
+                            fontSize: '0.75rem', 
+                            px: 1.5,
+                            borderColor: 'text.secondary',
+                            color: 'text.secondary',
+                            borderRadius: 0.5,
+                            '&:hover': {
+                              borderColor: 'text.primary',
+                              color: 'text.primary',
+                              bgcolor: 'action.hover'
+                            }
+                          }}
+                        >
+                          Access File
+                        </Button>
+                      )}
+                    </Box>
+                  </TableCell>
+                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, textAlign: 'center', verticalAlign: 'middle', padding: 0 }}>
+                    {/* Wrapper Box for centering */}
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      width: '100%', 
+                      minHeight: theme => theme.spacing(7) // Set minHeight
+                    }}>
+                      <Link
+                        component={NextLink}
+                        href={`/discuss/${item.isTopic ? item.topic_number : item.solicitation_number}`}
+                        onClick={() => trackEvent('discussion_link_click', { 
+                          id: item.isTopic ? item.topic_number : item.solicitation_number, 
+                          type: item.isTopic ? 'topic' : 'solicitation' 
+                        })}
+                        sx={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          maxWidth: 'fit-content',
+                          gap: 0.5,
+                          border: '1px solid',
+                          borderColor: '#60A5FA', // Lighter Blue border (Theme Accent)
+                          color: '#60A5FA', // Lighter Blue text/icon
+                          textDecoration: 'none',
+                          bgcolor: 'transparent', // Keep background transparent
+                          px: 1.5,
+                          borderRadius: 0.5,
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            borderColor: '#42A5F5', // Slightly darker Lighter Blue border
+                            color: '#42A5F5', // Slightly darker Lighter Blue text
+                            bgcolor: 'action.hover'
+                          },
+                          '& .MuiBox-root > .MuiBox-root': { 
+                             bgcolor: 'primary.main', 
+                             color: 'primary.contrastText' 
+                          }
+                        }}
+                      >
+                        <ChatBubbleOutlineIcon sx={{ fontSize: 16 }} />
+                        <Typography variant="body2" component="span" sx={{ 
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.5
+                        }}>
+                          Discussion
+                          <Box
+                            component="span"
+                            sx={{ 
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              minWidth: '20px',
+                              height: '20px',
+                              borderRadius: '10px',
+                              fontSize: '0.75rem',
+                              fontWeight: 'medium',
+                              px: 0.75,
+                              opacity: isLoadingCounts ? 0.7 : 1,
+                              transition: 'opacity 0.2s ease'
+                            }}
+                          >
+                            {discussionCounts[item.isTopic ? item.topic_number || '' : item.solicitation_number || ''] || '0'}
+                          </Box>
+                        </Typography>
+                      </Link>
+                    </Box>
                   </TableCell>
                 </TableRow>
               ))}
@@ -416,7 +457,6 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
           </Table>
         </TableContainer>
 
-        {/* Popover remains the same */}
         <Popover
           id={popoverId}
           open={open}
@@ -427,31 +467,33 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
           PaperProps={{
             elevation: 4,
             sx: {
-              backgroundColor: 'grey.700',
-              border: `1px solid grey.600`,
-              borderRadius: 1.5,
+              backgroundColor: 'background.paper',
+              border: `1px solid divider`,
+              borderRadius: 0.5,
               mt: 0.5,
             }
           }}
         >
           <Box sx={{ p: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Tooltip title="Copy Topic # and Go to DoD Search">
+            <Tooltip title="Copy Topic ID and Go to DoD Search">
               <Button
-                variant="contained"
+                variant="outlined"
                 size="small"
                 startIcon={<ContentCopyIcon sx={{ fontSize: 16 }} />}
                 onClick={handleCopyTopic}
                 sx={{ 
-                  bgcolor: '#002e6d',
-                  color: 'common.white',
+                  borderColor: 'text.secondary',
+                  color: 'text.secondary',
                   '&:hover': {
-                    bgcolor: '#001f4d'
+                    borderColor: 'text.primary',
+                    color: 'text.primary',
+                    bgcolor: 'action.hover'
                   },
                   textTransform: 'none', 
                   fontSize: '0.75rem' 
                 }}
               >
-                Copy Topic #
+                Copy Topic ID
               </Button>
             </Tooltip>
             {currentTopic?.sbir_topic_link && (
@@ -464,7 +506,6 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
           </Box>
         </Popover>
 
-        {/* Accordion section remains the same */}
         <Box sx={{ mt: 6, pb: { xs: 2, sm: 4, md: 5 } }}>
           <Accordion
             disableGutters
@@ -509,12 +550,12 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
                 4. Company Requirements:
               </Typography>
               <Box component="ul" sx={{ 
-                pl: 4, // padding-left
-                mt: 1, // margin-top
-                mb: 2, // margin-bottom
+                pl: 4,
+                mt: 1,
+                mb: 2,
                 '& li': { 
                   color: 'grey.400',
-                  mb: 1 // margin between list items
+                  mb: 1
                 }
               }}>
                 <li>Must be a small business (500 or fewer employees)</li>
