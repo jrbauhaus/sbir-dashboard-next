@@ -8,10 +8,10 @@ export const revalidate = 3600; // Revalidate every hour
 
 export default async function HomePage() {
   const sbirService = new SBIRApiService();
-  const solicitations = await sbirService.getActiveSolicitationsWithTopics('DOD');
+  const topics = await sbirService.getActiveTopics();
 
   // Log fetched data on the server
-  console.log(`[HomePage Server Component] Fetched ${solicitations.length} solicitations`);
+  console.log(`[HomePage Server Component] Fetched ${topics.length} active topics`);
 
   return (
     <main>
@@ -39,7 +39,7 @@ export default async function HomePage() {
       </Box>
 
       {/* Main content */}
-      <SolicitationTable solicitations={solicitations} />
+      <SolicitationTable topics={topics} />
     </main>
   );
 }

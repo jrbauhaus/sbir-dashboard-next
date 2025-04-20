@@ -1,9 +1,27 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
-import { SBIRSolicitation, SBIRTopic } from '@/types/sbir'; // Updated import path
+import { SBIRTopic } from '@/types/sbir'; // Removed SBIRSolicitation import
 
 const SBIR_API_BASE_URL = 'https://api.www.sbir.gov/public/api';
+// New DoD API Endpoint
+const DOD_API_URL = "https://www.dodsbirsttr.mil/topics/api/public/topics/search?searchParam=%7B%22searchText%22:null,%22components%22:null,%22programYear%22:null,%22solicitationCycleNames%22:%5B%22openTopics%22%5D,%22releaseNumbers%22:%5B%5D,%22topicReleaseStatus%22:%5B591,592%5D,%22modernizationPriorities%22:null,%22sortBy%22:%22finalTopicCode,asc%22%7D&size=1000&page=0";
+
 const MAX_RETRIES = 3; // Consider using this for retry logic if needed
 const RETRY_DELAY_MS = 1500; // Consider using this for retry logic if needed
+
+// Define an interface for the raw topic structure based on the sample
+interface RawDoDTopic {
+  topicCode: string;
+  topicTitle: string;
+  topicStatus: string;
+  topicPreReleaseStartDate?: number; // Added - confirmed from debug logs
+  topicPreReleaseEndDate?: number; // Added - confirmed from debug logs
+  topicStartDate?: number; // Added - confirmed from debug logs (potential open date)
+  topicEndDate?: number;   // Added - confirmed from debug logs (potential close date)
+  component: string;
+  solicitationNumber?: string;
+  solicitationTitle?: string;
+  program?: string;
+}
 
 export class SBIRApiService {
   private axiosInstance: AxiosInstance;
@@ -25,127 +43,155 @@ export class SBIRApiService {
   }
 
   // Method to fetch active solicitations with topics
-  async getActiveSolicitationsWithTopics(agency: string = 'DOD'): Promise<SBIRSolicitation[]> {
-    const params: any = {
-       agency: agency.toUpperCase(),
-       // current_status: 'Active' // Let's rely on the post-fetch filtering for now
-     };
-     let allAgencySolicitations: SBIRSolicitation[] = [];
+  async getActiveSolicitationsWithTopics(agency: string = 'DOD'): Promise<any[]> {
+    console.warn("[API Service] getActiveSolicitationsWithTopics is deprecated. Use getActiveTopics.");
+    return []; 
+  }
 
-     try {
-       console.log(`[API Service] Fetching solicitations for agency (${params.agency}) from ${SBIR_API_BASE_URL}`);
-       const response = await this.axiosInstance.get<SBIRSolicitation[]>('/solicitations', { params });
-       allAgencySolicitations = Array.isArray(response.data) ? response.data : [];
-       console.log(`[API Service] API returned ${allAgencySolicitations.length} solicitations.`);
-     } catch (error) {
-       this.handleApiError(error, `getActiveSolicitationsWithTopics - initial fetch for ${agency}`);
-       return []; // Return empty on error
-     }
+  async getSolicitation(id: string): Promise<SBIRTopic | null> {
+    console.warn("[API Service] getSolicitation needs refactoring for the new topic structure.");
+    try {
+      const allTopics = await this.getActiveTopics();
+      const topic = allTopics.find((t: SBIRTopic) => t.topic_number === id);
+      return topic || null; 
+    } catch (error) {
+      this.handleApiError(error, `getSolicitation - fetch for ID ${id}`);
+      return null;
+    }
+  }
 
-     const now = new Date();
+  // --- New Method using DoD API --- 
+  async getActiveTopics(): Promise<SBIRTopic[]> {
+    console.log(`[API Service] Fetching active topics from ${DOD_API_URL}`);
+    try {
+      const response = await fetch(DOD_API_URL, {
+        headers: {
+          'Accept': 'application/json',
+          // Add headers similar to the old Axios config
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+          'Referer': 'https://www.dodsbirsttr.mil/topics-app/', // Referer matching the site
+          'Origin': 'https://www.dodsbirsttr.mil' // Origin matching the site
+        },
+        cache: 'no-store' 
+      });
 
-     // Filter solicitations: keep if it has active topics OR if it has no topics but is itself active
-     const solicitationsWithActiveTopicsOrIsActive = allAgencySolicitations.filter(sol => {
-       if (!sol.solicitation_topics || sol.solicitation_topics.length === 0) {
-         // No topics: check solicitation dates
-         try {
-           const closeDate = new Date(sol.close_date);
-           const openDate = new Date(sol.open_date);
-           if (isNaN(openDate.getTime()) || isNaN(closeDate.getTime())) return false;
-           return openDate <= now && closeDate >= now;
-         } catch { return false; }
-       } else {
-         // Has topics: check if *any* topic is active
-         return sol.solicitation_topics.some(topic => {
-           try {
-             const topicCloseDate = new Date(topic.topic_closed_date);
-             const topicOpenDate = new Date(topic.topic_open_date);
-             if (isNaN(topicOpenDate.getTime()) || isNaN(topicCloseDate.getTime())) return false;
-             return topicOpenDate <= now && topicCloseDate >= now;
-           } catch { return false; }
-         });
-       }
-     });
+      if (!response.ok) {
+        // Log the response body for more details on 403 if possible
+        let errorBody = '';
+        try { errorBody = await response.text(); } catch {}
+        console.error('DoD API Fetch Error Body:', errorBody); 
+        throw new Error(`Failed to fetch DoD topics: ${response.status} ${response.statusText}`);
+      }
 
-     // Map to final structure, keeping only active topics within each solicitation
-     const finalSolicitations = solicitationsWithActiveTopicsOrIsActive.map(sol => {
-       if (!sol.solicitation_topics || sol.solicitation_topics.length === 0) {
-         return sol; // Return solicitation as-is if it had no topics initially
-       }
-       // Filter topics to keep only active ones
-       const activeTopics = sol.solicitation_topics.filter(topic => {
-         try {
-           const topicCloseDate = new Date(topic.topic_closed_date);
-           const topicOpenDate = new Date(topic.topic_open_date);
-           if (isNaN(topicOpenDate.getTime()) || isNaN(topicCloseDate.getTime())) return false;
-           return topicOpenDate <= now && topicCloseDate >= now;
-         } catch { return false; }
-       });
-       return { ...sol, solicitation_topics: activeTopics };
-     })
-     // Ensure we don't return solicitations that *only* had inactive topics (and were inactive themselves)
-     .filter(sol => {
-        if (!sol.solicitation_topics || sol.solicitation_topics.length === 0) {
-            // If no topics are left (or never existed), double check the main solicitation dates
-            try {
-              const closeDate = new Date(sol.close_date);
-              const openDate = new Date(sol.open_date);
-              if (isNaN(openDate.getTime()) || isNaN(closeDate.getTime())) return false;
-              return openDate <= now && closeDate >= now;
-            } catch { return false; }
+      const json = await response.json();
+      const rawTopics: RawDoDTopic[] = json?.data || []; // Use the defined interface
+      console.log(`[API Service] DoD API returned ${rawTopics.length} raw topics.`);
+
+      // Removed debug logs - no longer needed
+
+      const now = new Date();
+      console.log(`[API Service] Filtering with current time: ${now.toISOString()}`); // Log current time
+
+      // Filter raw topics based on dates (CORRECTED LOGIC v3)
+      const activeRawTopics = rawTopics.filter((topic: RawDoDTopic) => {
+        let openDateTs: number | undefined = undefined;
+        let closeDateTs: number | undefined = undefined;
+        const status = topic.topicStatus;
+
+        // Explicit per-status logic using CONFIRMED fields from RawDoDTopic
+        if (status === 'Pre-Release') {
+          openDateTs = topic.topicPreReleaseStartDate;
+          closeDateTs = topic.topicPreReleaseEndDate;
+        } else if (status === 'Open') {
+          // Tentatively use topicStartDate/EndDate for 'Open' status
+          openDateTs = topic.topicStartDate;
+          closeDateTs = topic.topicEndDate;
+        } else {
+          // Filter out topics with unhandled statuses
+          return false; 
         }
-        return true; // Keep if it still has active topics
-     });
 
-     console.log(`[API Service] Filtered down to ${finalSolicitations.length} active solicitations/topics.`);
-     return finalSolicitations;
-   }
+        // Check if date timestamps were found for the status
+        if (openDateTs === undefined || closeDateTs === undefined) {
+           return false;
+        }
 
-   async getSolicitation(id: string): Promise<SBIRSolicitation | null> {
-     try {
-       console.log(`[API Service] Fetching solicitation with ID: ${id}`);
-       // First try to get it from the list of active solicitations
-       const allSolicitations = await this.getActiveSolicitationsWithTopics();
-       
-       // Look for either a solicitation or topic with matching ID
-       const solicitation = allSolicitations.find(sol => {
-         if (sol.solicitation_number === id) return true;
-         if (sol.solicitation_topics?.some(topic => topic.topic_number === id)) return true;
-         return false;
-       });
+        // Dates are numbers (ms timestamps), parse them
+        const open = new Date(openDateTs);
+        const close = new Date(closeDateTs);
 
-       if (solicitation) {
-         // If it's a topic ID, filter to just that topic
-         if (solicitation.solicitation_topics?.length) {
-           const matchingTopic = solicitation.solicitation_topics.find(
-             topic => topic.topic_number === id
-           );
-           if (matchingTopic) {
-             return {
-               ...solicitation,
-               solicitation_topics: [matchingTopic]
-             };
-           }
-         }
-         return solicitation;
-       }
+        // Check parsing validity
+        const isValid = !isNaN(open.getTime()) && !isNaN(close.getTime());
+        if (!isValid) return false; // Filter out if dates are invalid
 
-       return null;
-     } catch (error) {
-       this.handleApiError(error, `getSolicitation - fetch for ID ${id}`);
-       return null;
-     }
-   }
+        // Check if the date range includes now
+        const isOpen = open <= now && close >= now;
 
-   private handleApiError(error: any, context?: string): void {
-     const message = context ? `SBIR API Error (${context}):` : 'SBIR API Error:';
-     console.error(message, error instanceof Error ? error.message : error);
-     if (axios.isAxiosError(error)) {
-         const axiosError = error as AxiosError;
-         console.error('Response Status:', axiosError.response?.status);
-         console.error('Response Data:', axiosError.response?.data);
-     } else if (error instanceof Error) {
-         console.error('Stack:', error.stack);
-     }
-   }
+        // Optional: Keep detailed log commented out for future debugging
+        // console.log(`[API Service] Topic ${topic.topicCode}: Status=${status}, OpenTs=${openDateTs}, CloseTs=${closeDateTs}, ParsedOpen=${open.toISOString()}, ParsedClose=${close.toISOString()}, IsOpen=${isOpen}`);
+
+        return isOpen; // Only return true if dates are valid AND within range
+      });
+      // End of filter
+
+      console.log(`[API Service] Filtered down to ${activeRawTopics.length} currently active topics.`);
+
+      // Map filtered raw topics to the SBIRTopic structure used by frontend
+      const cleanedTopics: SBIRTopic[] = activeRawTopics.map((topic: RawDoDTopic) => {
+        const topicNumber = topic.topicCode;
+
+        // --- CORRECTED DATE MAPPING LOGIC ---
+        // NOTE:
+        // - For Pre-Release, show topicPreReleaseStartDate as open.
+        // - For Open, show topicStartDate as open.
+        // - Always use topicEndDate for submission deadline.
+
+        // Set open date properly depending on topic status
+        const mappedOpen = 
+          topic.topicStatus === 'Pre-Release'
+            ? topic.topicPreReleaseStartDate
+              ? new Date(topic.topicPreReleaseStartDate).toISOString()
+              : '' 
+            : topic.topicStartDate 
+              ? new Date(topic.topicStartDate).toISOString()
+              : '';
+
+        // Always use topicEndDate for deadline
+        const mappedClose = topic.topicEndDate
+          ? new Date(topic.topicEndDate).toISOString()
+          : '';
+        // --- END CORRECTED DATE MAPPING LOGIC ---
+
+        return {
+          topic_number: topicNumber,
+          topic_title: topic.topicTitle,
+          topic_status: topic.topicStatus,
+          submission_window_open: mappedOpen, // Use corrected open date
+          submission_deadline: mappedClose,    // Use corrected close date
+          component: topic.component,
+          solicitation_number: topic.solicitationNumber,
+          solicitation_title: topic.solicitationTitle,
+          program: topic.program,
+        };
+      });
+
+      return cleanedTopics;
+
+    } catch (error) {
+      this.handleApiError(error, `getActiveTopics - fetch from DoD API`);
+      return []; // Return empty on error
+    }
+  }
+
+  private handleApiError(error: any, context?: string): void {
+    const message = context ? `SBIR API Error (${context}):` : 'SBIR API Error:';
+    console.error(message, error instanceof Error ? error.message : error);
+    if (axios.isAxiosError(error)) {
+        const axiosError = error as AxiosError;
+        console.error('Response Status:', axiosError.response?.status);
+        console.error('Response Data:', axiosError.response?.data);
+    } else if (error instanceof Error) {
+        console.error('Stack:', error.stack);
+    }
+  }
 } 

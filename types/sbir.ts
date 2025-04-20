@@ -1,14 +1,21 @@
+// Define the new structure based on the DoD API
 export interface SBIRTopic {
-    topic_title: string;
-    branch: string;
-    topic_number: string;
-    topic_open_date: string;
-    topic_closed_date: string;
-    topic_description: string;
-    sbir_topic_link: string;
-    subtopics: any[];
-  }
+  topic_number: string;
+  topic_title: string;
+  topic_status: string; // "Pre-Release" | "Open"
+  submission_window_open: string;
+  submission_deadline: string;
+  component: string; // e.g., "NAVY", "ARMY"
+  // Add fields from the API response
+  solicitation_number?: string;
+  solicitation_title?: string;
+  program?: string;
+  // topic_description?: string;
+  // topic_link?: string; // If the API provides a direct link
+}
 
+// Comment out the old Solicitation type for now
+/*
 export interface SBIRSolicitation {
   solicitation_id: number;
   solicitation_title: string;
@@ -25,5 +32,30 @@ export interface SBIRSolicitation {
   occurrence_number: string | null;
   solicitation_agency_url: string;
   current_status: string;
-  solicitation_topics: SBIRTopic[];
+  solicitation_topics: SBIRTopic[]; // This nesting is no longer needed
+} 
+*/
+
+// Define an interface for the raw topic structure based on the sample
+interface RawDoDTopic {
+  topicCode: string;
+  topicTitle: string;
+  topicStatus: string;
+  // Confirmed date fields from debug logs
+  topicPreReleaseStartDate?: number; // Use number for millisecond timestamps
+  topicPreReleaseEndDate?: number;
+  topicStartDate?: number; // Potential open date
+  topicEndDate?: number;   // Potential close date
+  // Removed non-existent/unused date fields:
+  // topicOpenDate?: string; 
+  // topicCAPOCStartDate?: string; 
+  // topicCloseDate?: string;
+  // topicCAPOCEndDate?: string;
+  component: string;
+  solicitationNumber?: string;
+  solicitationTitle?: string;
+  program?: string;
+  // Add other potentially useful fields observed in debug logs if needed
+  // topicId?: string;
+  // releaseNumber?: number;
 } 

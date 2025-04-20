@@ -12,7 +12,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import SearchIcon from '@mui/icons-material/Search';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
-import { SBIRSolicitation, SBIRTopic } from '@/types/sbir'; // Updated import path
+import { SBIRTopic } from '@/types/sbir'; // Use new SBIRTopic type
 import NextLink from 'next/link';
 import { trackEvent } from '@/lib/trackEvent'; // Import the tracking function
 import { spaceGrotesk, ibmPlexMono } from '@/components/ThemeRegistry/theme'; // Corrected import path
@@ -32,66 +32,35 @@ const formatDate = (dateString: string): string => {
   }
 };
 
-// Interface to represent a displayable item (either Solicitation or Topic)
-interface DisplayItem extends Partial<SBIRSolicitation>, Partial<SBIRTopic> {
-  isTopic: boolean;
-  displayId: string; // Unique key for rendering
-}
-
-// Interface for component props
+// Interface for component props - UPDATED
 interface SolicitationTableProps {
-  solicitations: SBIRSolicitation[];
+  topics: SBIRTopic[]; // Expect topics now
 }
 
-export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitations }) => {
+export const SolicitationTable: React.FC<SolicitationTableProps> = ({ topics }) => {
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
-  const [currentTopic, setCurrentTopic] = useState<SBIRTopic | null>(null);
+  const [currentTopic, setCurrentTopic] = useState<SBIRTopic | null>(null); // Now holds the full topic
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBranch, setSelectedBranch] = useState('');
   const [discussionCounts, setDiscussionCounts] = useState<Record<string, number>>({});
   const [isLoadingCounts, setIsLoadingCounts] = useState(false);
 
-  // Process the solicitations prop to create displayItems
-  const displayItems: DisplayItem[] = Array.isArray(solicitations)
-    ? solicitations.flatMap((sol: SBIRSolicitation): DisplayItem[] => {
-      if (sol.solicitation_topics && sol.solicitation_topics.length > 0) {
-        return sol.solicitation_topics.map((topic: SBIRTopic): DisplayItem => ({
-          ...topic,
-          agency: sol.agency,
-          current_status: sol.current_status,
-          solicitation_agency_url: sol.solicitation_agency_url,
-          close_date: sol.close_date,
-          solicitation_number: sol.solicitation_number,
-          solicitation_title: sol.solicitation_title,
-          isTopic: true,
-          displayId: `${sol.solicitation_id}-${topic.topic_number}`
-        }));
-      } else {
-        return [{
-          ...sol,
-          isTopic: false,
-          displayId: `${sol.solicitation_id}`
-        }];
-      }
-    })
-    : [];
-  
-  // Get unique branch names for the filter dropdown
-  const uniqueBranches = Array.from(new Set(displayItems.map(item => item.branch).filter(Boolean)));
+  // Get unique branch/component names from topics
+  const uniqueBranches = Array.from(new Set(topics.map(topic => topic.component).filter(Boolean)));
 
-  // Filter items based on search AND selected branch
-  const filteredItems = displayItems.filter(item => {
+  // Filter topics based on search AND selected branch
+  const filteredItems = topics.filter(topic => {
     const searchMatch = 
-      item.topic_title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.solicitation_title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.topic_number?.toLowerCase().includes(searchQuery.toLowerCase());
+      topic.topic_title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      // topic.topic_description?.toLowerCase().includes(searchQuery.toLowerCase()) || // Optional: search description?
+      topic.topic_number?.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const branchMatch = !selectedBranch || item.branch === selectedBranch;
+    const branchMatch = !selectedBranch || topic.component === selectedBranch;
 
     return searchMatch && branchMatch;
   });
 
-  // Fetch all discussion counts at once
+  // Fetch discussion counts (logic remains largely the same, but keys are topic_number)
   useEffect(() => {
     let isMounted = true;
     const controller = new AbortController();
@@ -106,7 +75,7 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
         if (!response.ok || !isMounted) return;
         
         const data = await response.json();
-        setDiscussionCounts(data.counts);
+        setDiscussionCounts(data.counts); // Ensure API returns counts keyed by topic_number
       } catch (error: unknown) {
         if (error instanceof Error && error.name !== 'AbortError') {
           console.warn('Error fetching discussion counts:', error);
@@ -124,12 +93,13 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
       isMounted = false;
       controller.abort();
     };
-  }, []); // Only fetch once when component mounts
+  }, []);
 
+  // Update handlers to use topic directly
   const handleClickApplyPopover = (event: React.MouseEvent<HTMLButtonElement>, topic: SBIRTopic) => {
-    trackEvent('apply_popover_opened', { topic_number: topic.topic_number }); // Track popover open
+    trackEvent('apply_popover_opened', { topic_number: topic.topic_number });
     setAnchorEl(event.currentTarget);
-    setCurrentTopic(topic);
+    setCurrentTopic(topic); // Set the full topic object
   };
 
   const handleClosePopover = () => {
@@ -138,18 +108,15 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
   };
 
   const handleCopyTopic = async () => {
-    if (typeof window === 'undefined' || !currentTopic?.topic_number) {
-      return;
-    }
-    trackEvent('apply_copy_topic_click', { topic_number: currentTopic.topic_number }); // Track copy click
-
+    if (!currentTopic?.topic_number) return; // Use currentTopic directly
+    trackEvent('apply_copy_topic_click', { topic_number: currentTopic.topic_number });
     try {
       const topicNumber = currentTopic.topic_number.trim();
       await navigator.clipboard.writeText(topicNumber);
-      console.log(`Copied topic #: ${topicNumber}`);
+      console.log(`Copied topic ID: ${topicNumber}`); // Updated log
       window.open('https://www.dodsbirsttr.mil/topics-app/', '_blank');
     } catch (err) {
-      console.error('Failed to copy topic number: ', err);
+      console.error('Failed to copy topic ID: ', err); // Updated log
     } finally {
       handleClosePopover();
     }
@@ -158,7 +125,10 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
   const open = Boolean(anchorEl);
   const popoverId = open ? 'copy-topic-popover' : undefined;
 
-  console.log('[SolicitationTable Client Component] Processed displayItems:', displayItems);
+  // DEBUG: Log the first topic object received by the component
+  if (topics && topics.length > 0) {
+    console.log('[SolicitationTable DEBUG] First topic received:', topics[0]);
+  }
 
   return (
     <Box sx={{ 
@@ -267,9 +237,9 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredItems.map((item: DisplayItem) => (
+              {filteredItems.map((topic: SBIRTopic) => (
                 <TableRow
-                  key={item.displayId}
+                  key={topic.topic_number}
                   sx={{
                     backgroundColor: 'transparent', // Make row background transparent
                     transition: 'background-color 0.1s ease', // Faster transition
@@ -287,15 +257,14 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
                 >
                   <TableCell>
                     <Typography variant="body2" component="div" sx={{ color: 'text.primary', fontWeight: 500, mb: 0.5 }}>
-                      {(item.isTopic ? item.branch : item.agency) || 'N/A'}:
-                      <span style={{ fontWeight: 400 }}> {item.isTopic ? item.topic_title : item.solicitation_title}</span>
+                      {topic.component || 'N/A'}:
+                      <span style={{ fontWeight: 400 }}> {topic.topic_title}</span>
                     </Typography>
                     <Typography variant="caption" color="text.secondary" component="div" sx={{ fontFamily: ibmPlexMono }}>
-                      {item.isTopic ? `Topic #: ${item.topic_number?.trim() || 'N/A'}` : `Solicitation #: ${item.solicitation_number || 'N/A'}`}
+                      Topic #: {topic.topic_number}
                     </Typography>
                   </TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, textAlign: 'center', verticalAlign: 'middle', padding: 0 }}>
-                    {/* Wrapper Box for centering */}
                     <Box sx={{ 
                       display: 'flex', 
                       alignItems: 'center', 
@@ -303,15 +272,15 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
                       width: '100%', 
                       minHeight: theme => theme.spacing(7)
                     }}>
-                      {/* Inner Box for icon + text (keep inline-flex) */}
                       <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75 }}>
                         <FiberManualRecordIcon sx={{ fontSize: 10, color: 'secondary.main' }} /> 
-                        <Typography variant="body2" sx={{ color: 'text.secondary', fontFamily: ibmPlexMono }}>Active</Typography>
+                        <Typography variant="body2" sx={{ color: 'text.secondary', fontFamily: ibmPlexMono }}>
+                          {topic.topic_status}
+                        </Typography>
                       </Box>
                     </Box>
                   </TableCell>
                   <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', padding: 0 }}>
-                    {/* Wrapper Box for centering */}
                     <Box sx={{ 
                       display: 'flex', 
                       alignItems: 'center', 
@@ -319,84 +288,56 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
                       width: '100%', 
                       minHeight: theme => theme.spacing(7)
                     }}>
-                      <Typography variant="body2" sx={{ color: 'text.secondary', fontFamily: ibmPlexMono }}>{formatDate(item.isTopic ? item.topic_closed_date! : item.close_date!)}</Typography>
+                      <Typography variant="body2" sx={{ color: 'text.secondary', fontFamily: ibmPlexMono }}>
+                        {formatDate(topic.submission_deadline)}
+                      </Typography>
                     </Box>
                   </TableCell>
                   <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', padding: 0 }}>
-                    {/* Wrapper Box for centering */}
                     <Box sx={{ 
                       display: 'flex', 
                       alignItems: 'center', 
                       justifyContent: 'center', 
                       width: '100%', 
-                      minHeight: theme => theme.spacing(7) // Set minHeight 
+                      minHeight: theme => theme.spacing(7)
                     }}>
-                      {item.isTopic ? (
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          aria-describedby={popoverId}
-                          onClick={(e) => handleClickApplyPopover(e, item as SBIRTopic)}
-                          sx={{ 
-                            textTransform: 'none',
-                            fontSize: '0.75rem',
-                            px: 1.5, 
-                            borderColor: '#EF5350', // Lighter Red border
-                            color: '#EF5350', // Lighter Red text
-                            borderRadius: 0.5,
-                            '&:hover': {
-                              borderColor: '#E53935', // Slightly darker Lighter Red border
-                              color: '#E53935', // Slightly darker Lighter Red text
-                              bgcolor: 'action.hover' 
-                            }
-                          }}
-                        >
-                          Apply
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          component="a"
-                          href={item.solicitation_agency_url || '#'}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          startIcon={<OpenInNewIcon sx={{ fontSize: 14 }}/>}
-                          disabled={!item.solicitation_agency_url}
-                          sx={{ 
-                            textTransform: 'none', 
-                            fontSize: '0.75rem', 
-                            px: 1.5,
-                            borderColor: 'text.secondary',
-                            color: 'text.secondary',
-                            borderRadius: 0.5,
-                            '&:hover': {
-                              borderColor: 'text.primary',
-                              color: 'text.primary',
-                              bgcolor: 'action.hover'
-                            }
-                          }}
-                        >
-                          Access File
-                        </Button>
-                      )}
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        aria-describedby={popoverId}
+                        onClick={(e) => handleClickApplyPopover(e, topic)}
+                        sx={{ 
+                          textTransform: 'none',
+                          fontSize: '0.75rem',
+                          px: 1.5, 
+                          borderColor: '#EF5350',
+                          color: '#EF5350',
+                          borderRadius: 0.5,
+                          '&:hover': {
+                            borderColor: '#E53935',
+                            color: '#E53935',
+                            bgcolor: 'action.hover' 
+                          }
+                        }}
+                      >
+                        Apply
+                      </Button>
                     </Box>
                   </TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, textAlign: 'center', verticalAlign: 'middle', padding: 0 }}>
-                    {/* Wrapper Box for centering */}
                     <Box sx={{ 
                       display: 'flex', 
                       alignItems: 'center', 
                       justifyContent: 'center', 
                       width: '100%', 
-                      minHeight: theme => theme.spacing(7) // Set minHeight
+                      minHeight: theme => theme.spacing(7)
                     }}>
                       <Link
                         component={NextLink}
-                        href={`/discuss/${item.isTopic ? item.topic_number : item.solicitation_number}`}
+                        href={`/discuss/${topic.topic_number}`}
                         onClick={() => trackEvent('discussion_link_click', { 
-                          id: item.isTopic ? item.topic_number : item.solicitation_number, 
-                          type: item.isTopic ? 'topic' : 'solicitation' 
+                          id: topic.topic_number,
+                          type: 'topic' 
                         })}
                         sx={{
                           display: 'inline-flex',
@@ -404,16 +345,16 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
                           maxWidth: 'fit-content',
                           gap: 0.5,
                           border: '1px solid',
-                          borderColor: '#60A5FA', // Lighter Blue border (Theme Accent)
-                          color: '#60A5FA', // Lighter Blue text/icon
+                          borderColor: '#60A5FA',
+                          color: '#60A5FA',
                           textDecoration: 'none',
-                          bgcolor: 'transparent', // Keep background transparent
+                          bgcolor: 'transparent',
                           px: 1.5,
                           borderRadius: 0.5,
                           transition: 'all 0.2s ease',
                           '&:hover': {
-                            borderColor: '#42A5F5', // Slightly darker Lighter Blue border
-                            color: '#42A5F5', // Slightly darker Lighter Blue text
+                            borderColor: '#42A5F5',
+                            color: '#42A5F5',
                             bgcolor: 'action.hover'
                           },
                           '& .MuiBox-root > .MuiBox-root': { 
@@ -445,7 +386,7 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
                               transition: 'opacity 0.2s ease'
                             }}
                           >
-                            {discussionCounts[item.isTopic ? item.topic_number || '' : item.solicitation_number || ''] || '0'}
+                            {discussionCounts[topic.topic_number] || '0'}
                           </Box>
                         </Typography>
                       </Link>
@@ -496,13 +437,6 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ solicitati
                 Copy Topic ID
               </Button>
             </Tooltip>
-            {currentTopic?.sbir_topic_link && (
-              <Tooltip title="View Original Topic">
-                <IconButton component="a" size="small" href={currentTopic.sbir_topic_link} target="_blank" rel="noopener noreferrer" sx={{ color: 'grey.400', '&:hover': { color: 'common.white' } }}>
-                  <OpenInNewIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            )}
           </Box>
         </Popover>
 
