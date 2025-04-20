@@ -8,5 +8,5 @@ export default async function DiscussPage(props: {
   const sbirService = new SBIRApiService();
   const solicitation = await sbirService.getSolicitation(id);
 
-  return <DiscussionView id={id} solicitation={solicitation} />;
+  return <DiscussionView id={id} topic={solicitation} />;
 } 
