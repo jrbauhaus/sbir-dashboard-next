@@ -5,29 +5,24 @@ import { Box, Typography, Paper, Button } from '@mui/material';
 import { GiscusComments } from '@/app/components/GiscusComments';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import NextLink from 'next/link';
-import { SBIRSolicitation } from '@/types/sbir';
+import { SBIRTopic } from '@/types/sbir';
 import { trackEvent } from '@/lib/trackEvent';
 
 interface DiscussionViewProps {
   id: string;
-  solicitation: SBIRSolicitation | null;
+  topic: SBIRTopic | null;
 }
 
-export function DiscussionView({ id, solicitation }: DiscussionViewProps) {
-  // Find the matching topic if this is a topic ID
-  const topic = solicitation?.solicitation_topics?.find(t => t.topic_number === id);
-
+export function DiscussionView({ id, topic }: DiscussionViewProps) {
   useEffect(() => {
-    // Determine the correct title for tracking
-    const trackTitle = topic?.topic_title || solicitation?.solicitation_title || 'Unknown Title';
+    const trackTitle = topic?.topic_title || 'Unknown Title';
     trackEvent('discussion_view', { id: id, title: trackTitle });
-  }, [id, solicitation, topic]); // Add topic to dependency array
+  }, [id, topic]);
 
-  // Determine display title and subtitle
-  const displayTitle = topic?.topic_title || solicitation?.solicitation_title || 'Discussion';
+  const displayTitle = topic?.topic_title || 'Discussion';
   const displaySubtitle = topic ? 
-    `Topic ${topic.topic_number} (Solicitation: ${solicitation?.solicitation_number})` : 
-    `Solicitation ${solicitation?.solicitation_number}`;
+    `Topic ${topic.topic_number} (Solicitation: ${topic.solicitation_number || 'N/A'})` : 
+    `Topic ID: ${id}`;
 
   return (
     <Box sx={{ 
