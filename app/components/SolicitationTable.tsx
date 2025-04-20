@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box, Typography, Paper, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Button, Accordion, AccordionSummary, AccordionDetails,
-  Popover, IconButton, Tooltip, TextField, InputAdornment, Link, Select, MenuItem, FormControl, InputLabel
+  Popover, IconButton, Tooltip, TextField, InputAdornment, Link, Select, MenuItem, FormControl, InputLabel,
+  TableSortLabel
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
@@ -16,6 +17,9 @@ import { SBIRTopic } from '@/types/sbir'; // Use new SBIRTopic type
 import NextLink from 'next/link';
 import { trackEvent } from '@/lib/trackEvent'; // Import the tracking function
 import { spaceGrotesk, ibmPlexMono } from '@/components/ThemeRegistry/theme'; // Corrected import path
+
+// Type for sort direction
+type Order = 'asc' | 'desc';
 
 // Helper function for consistent date formatting (moved inside or to a util file)
 const formatDate = (dateString: string): string => {
@@ -44,21 +48,55 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ topics }) 
   const [selectedBranch, setSelectedBranch] = useState('');
   const [discussionCounts, setDiscussionCounts] = useState<Record<string, number>>({});
   const [isLoadingCounts, setIsLoadingCounts] = useState(false);
+  
+  // State for sorting
+  const [orderBy, setOrderBy] = useState<keyof SBIRTopic | ''>('submission_deadline'); // Default sort by deadline
+  const [order, setOrder] = useState<Order>('asc'); // Default ascending
 
   // Get unique branch/component names from topics
   const uniqueBranches = Array.from(new Set(topics.map(topic => topic.component).filter(Boolean)));
 
-  // Filter topics based on search AND selected branch
-  const filteredItems = topics.filter(topic => {
-    const searchMatch = 
-      topic.topic_title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      // topic.topic_description?.toLowerCase().includes(searchQuery.toLowerCase()) || // Optional: search description?
-      topic.topic_number?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const branchMatch = !selectedBranch || topic.component === selectedBranch;
+  // Memoized sorting and filtering logic
+  const sortedAndFilteredItems = useMemo(() => {
+    let filtered = topics.filter(topic => {
+      const searchMatch = 
+        topic.topic_title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        topic.topic_number?.toLowerCase().includes(searchQuery.toLowerCase());
+      const branchMatch = !selectedBranch || topic.component === selectedBranch;
+      return searchMatch && branchMatch;
+    });
 
-    return searchMatch && branchMatch;
-  });
+    if (orderBy) {
+      filtered = filtered.sort((a, b) => {
+        let compare = 0;
+        const valA = a[orderBy];
+        const valB = b[orderBy];
+
+        if (orderBy === 'submission_deadline' || orderBy === 'submission_window_open') {
+          // Date comparison (handle potential empty strings)
+          const dateA = valA ? new Date(valA).getTime() : 0;
+          const dateB = valB ? new Date(valB).getTime() : 0;
+          if (isNaN(dateA) || isNaN(dateB)) return 0; // Avoid NaN issues
+          compare = dateA - dateB;
+        } else if (typeof valA === 'string' && typeof valB === 'string') {
+          // Basic string comparison (add more specific sorts if needed)
+          compare = valA.localeCompare(valB);
+        } 
+        // Add number comparison if needed later
+
+        return order === 'asc' ? compare : -compare;
+      });
+    }
+
+    return filtered;
+  }, [topics, searchQuery, selectedBranch, orderBy, order]);
+
+  // Handler for sort requests
+  const handleRequestSort = (property: keyof SBIRTopic | '') => {
+    const isAsc = orderBy === property && order === 'asc';
+    setOrder(isAsc ? 'desc' : 'asc');
+    setOrderBy(property);
+  };
 
   // Fetch discussion counts (logic remains largely the same, but keys are topic_number)
   useEffect(() => {
@@ -231,13 +269,30 @@ export const SolicitationTable: React.FC<SolicitationTableProps> = ({ topics }) 
               >
                 <TableCell>Opportunity</TableCell>
                 <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, textAlign: 'center' }}>Status</TableCell>
-                <TableCell>Deadline</TableCell>
+                <TableCell
+                  key='submission_deadline'
+                  sortDirection={orderBy === 'submission_deadline' ? order : false}
+                >
+                  <TableSortLabel
+                    active={orderBy === 'submission_deadline'}
+                    direction={orderBy === 'submission_deadline' ? order : 'asc'}
+                    onClick={() => handleRequestSort('submission_deadline')}
+                    sx={{ 
+                      '& .MuiTableSortLabel-icon': { 
+                        color: orderBy === 'submission_deadline' ? 'text.primary !important' : 'text.secondary',
+                      },
+                      color: 'inherit !important', // Ensure label text color matches header
+                    }}
+                  >
+                    Deadline
+                  </TableSortLabel>
+                </TableCell>
                 <TableCell>Apply</TableCell>
                 <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, textAlign: 'center' }}>Discussion</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredItems.map((topic: SBIRTopic) => (
+              {sortedAndFilteredItems.map((topic: SBIRTopic) => (
                 <TableRow
                   key={topic.topic_number}
                   sx={{
