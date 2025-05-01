@@ -1,6 +1,7 @@
 import { SBIRApiService } from '@/lib/sbirService';
 import { SolicitationTable } from './components/SolicitationTable'; // Use relative import
 import { Box } from '@mui/material'; // Import Box for layout
+import { WaitlistForm } from '@/components/WaitlistForm'; // Import the new component
 
 // Revalidate the page data periodically (e.g., every hour)
 // Or use { next: { revalidate: 3600 } } in fetch if using fetch API directly
@@ -38,7 +39,10 @@ export default async function HomePage() {
         />
       </Box>
 
-      {/* Main content */}
+      {/* Main content - ADD WaitlistForm HERE */}
+      <Box sx={{ px: 2, pt: 2 }}> {/* Add some padding */} 
+        <WaitlistForm />
+      </Box>
       <SolicitationTable topics={topics} />
     </main>
   );
