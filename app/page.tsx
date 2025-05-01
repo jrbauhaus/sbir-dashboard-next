@@ -16,7 +16,18 @@ export default async function HomePage() {
 
   return (
     <main>
-      {/* Header */}
+      {/* ADDED: Waitlist form styled as a top banner */}
+      <Box sx={{
+          bgcolor: 'primary.dark', // Use theme color (adjust if needed)
+          color: 'common.white',
+          textAlign: 'center',
+          py: 2 // Vertical padding (adjust as needed)
+          // Add px if horizontal padding is desired inside the banner
+      }}>
+        <WaitlistForm />
+      </Box>
+
+      {/* Header with Logo */}
       <Box sx={{ 
         display: 'flex', 
         justifyContent: 'center', 
@@ -39,10 +50,7 @@ export default async function HomePage() {
         />
       </Box>
 
-      {/* Main content - ADD WaitlistForm HERE */}
-      <Box sx={{ px: 2, pt: 2 }}> {/* Add some padding */} 
-        <WaitlistForm />
-      </Box>
+      {/* Main content table */}
       <SolicitationTable topics={topics} />
     </main>
   );

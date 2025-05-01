@@ -17,27 +17,35 @@ export function WaitlistForm() {
           .select(); // Select to check for RLS errors explicitly
         
         if (error) {
-          console.error("Waitlist insert error:", error);
-          // Check for unique constraint violation (code 23505)
-          if (error.code === '23505') {
+          // Log the full error object for detailed debugging
+          console.error("Waitlist insert Supabase error object:", error);
+          
+          if (error.code === '23505') { // Duplicate email
               setStatus("error"); // Specific error for duplicate
-          } else {
+          } else { // Other Supabase error (like RLS)
               setStatus("idle"); // Generic error, allow retry
+              // Use error.message for a clearer alert
               alert(`Error submitting waitlist: ${error.message}`); // Provide feedback
           }
         } else {
           setStatus("sent"); // Success
         }
     } catch (err) {
+        // Catch unexpected errors (e.g., network issues)
         console.error("Unexpected error submitting waitlist:", err);
         setStatus("idle");
-        alert('An unexpected error occurred. Please try again.');
+        // Provide a generic message for non-Supabase errors
+        const message = err instanceof Error ? err.message : 'An unknown error occurred.';
+        alert(`An unexpected error occurred: ${message}. Please try again.`);
     }
   };
 
   return (
     <div className="mb-6 p-4 bg-blue-800 text-white rounded-lg">
       <h3 className="text-lg font-semibold mb-2">Team Builder Early Access</h3>
+      <p className="text-sm text-blue-100 mb-4">
+        Join the waitlist to connect with experts and innovators ready to build their SBIR application team.
+      </p>
       {status === "sent" ? (
         <p>✅ You're on the list! We'll email you when it's live.</p>
       ) : (

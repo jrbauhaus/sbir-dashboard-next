@@ -32,32 +32,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const afwerxUpdate = 'AFWERX Update: "The Department of the Air Force has removed its submitted topics from the 25.2/B OSD SBIR/STTR solicitation while they undergo internal review..."';
-  const filterGuidance = 'Please use the Branch filter to view opportunities from other agencies.';
-
   return (
     <html lang="en">
       <body className={`${spaceGrotesk.variable} ${ibmPlexMono.variable}`}>
-        <Paper 
-          elevation={0} 
-          square 
-          sx={{ 
-            py: 1, 
-            px: 2, 
-            bgcolor: 'background.paper', 
-            borderBottom: 1, 
-            borderColor: 'divider', 
-            textAlign: 'center' 
-          }}
-        >
-          <Typography variant="body2" component="span" sx={{ color: 'text.secondary' }}>
-            {afwerxUpdate}
-          </Typography>
-          <Box sx={{ height: '0.5em' }} /> 
-          <Typography variant="body2" component="span" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
-            {filterGuidance}
-          </Typography>
-        </Paper>
         <ThemeRegistry>{children}</ThemeRegistry>
         <Analytics />
       </body>
