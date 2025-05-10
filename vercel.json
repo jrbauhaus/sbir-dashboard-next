@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/refreshCache",
-      "schedule": "0 */6 * * *",
+      "schedule": "0 15 * * *",
       "headers": {
         "Authorization": "Bearer 0685fd3d2fcfb9a265ed04aecada659e9b9806e40c84bbb8c02ce0eadfd0ba10"
       }
