@@ -14,7 +14,7 @@ export function GiscusComments() {
       category="SBIR Discussions"
       categoryId="DIC_kwDOOZtNDc4CpGol"
       mapping="pathname"
-      term={pathname}
+      term={pathname ?? undefined}
       reactionsEnabled="1"
       emitMetadata="0"
       inputPosition="bottom"
