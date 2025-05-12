@@ -1,18 +1,29 @@
-import { SBIRApiService } from '@/lib/sbirService';
 import { SolicitationTable } from './components/SolicitationTable'; // Use relative import
 import { Box } from '@mui/material'; // Import Box for layout
 import { WaitlistForm } from '@/components/WaitlistForm'; // Import the new component
 
 // Revalidate the page data periodically (e.g., every hour)
 // Or use { next: { revalidate: 3600 } } in fetch if using fetch API directly
-export const revalidate = 3600; // Revalidate every hour
+// export const revalidate = 3600; // This will be handled by the fetch revalidate option
 
 export default async function HomePage() {
-  const sbirService = new SBIRApiService();
-  const topics = await sbirService.getActiveTopics();
+  // const sbirService = new SBIRApiService();
+  // const topics = await sbirService.getActiveTopics();
+
+  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/solicitations`, {
+    next: { revalidate: 3600 }, // Revalidates this specific fetch every hour
+  });
+
+  if (!res.ok) {
+    // This will activate the closest `error.js` Error Boundary
+    console.error(`[HomePage Server Component] Failed to load SBIR topics: ${res.status}, ${await res.text()}`);
+    throw new Error(`Failed to load SBIR topics: ${res.status}`);
+  }
+ 
+  const topics = await res.json();
 
   // Log fetched data on the server
-  console.log(`[HomePage Server Component] Fetched ${topics.length} active topics`);
+  console.log(`[HomePage Server Component] Fetched ${Array.isArray(topics) ? topics.length : '0'} active topics from API.`);
 
   return (
     <main>
