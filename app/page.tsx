@@ -10,17 +10,21 @@ export default async function HomePage() {
   // const sbirService = new SBIRApiService();
   // const topics = await sbirService.getActiveTopics();
 
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : 'http://localhost:3000';
+  const baseUrl =
+    process.env.VERCEL_URL && process.env.VERCEL_ENV !== 'development'
+      ? `https://${process.env.VERCEL_URL}`
+      : 'http://localhost:3000';
 
-  const res = await fetch(`${baseUrl}/api/solicitations`, {
+  const fetchUrl = `${baseUrl}/api/solicitations`;
+  console.log('[DEBUG] Fetching topics from:', fetchUrl);
+
+  const res = await fetch(fetchUrl, {
     next: { revalidate: 3600 }, // Revalidates this specific fetch every hour
   });
 
   if (!res.ok) {
-    // This will activate the closest `error.js` Error Boundary
-    console.error(`[HomePage Server Component] Failed to load SBIR topics: ${res.status}, ${await res.text()}`);
+    const errorText = await res.text();
+    console.error(`[HomePage Server Component] Failed to load SBIR topics: ${res.status}, Response: ${errorText}`);
     throw new Error(`Failed to load SBIR topics: ${res.status}`);
   }
  
