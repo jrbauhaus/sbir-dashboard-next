@@ -1,7 +1,7 @@
 {
   "crons": [
     {
-      "path": "/api/refreshCache",
+      "path": "/api/refreshCache?cron_secret=0685fd3d2fcfb9a265ed04aecada659e9b9806e40c84bbb8c02ce0eadfd0ba10",
       "schedule": "0 15 * * *"
     }
   ]

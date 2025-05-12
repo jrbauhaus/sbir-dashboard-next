@@ -3,6 +3,11 @@ import { setCache } from '@/lib/cache';
 import { SBIRApiService } from '@/lib/sbirService'; // Import the class
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  // Temporary protection using query param for Vercel Hobby Cron support
+  if (req.query.cron_secret !== process.env.CRON_SECRET) {
+    return res.status(403).json({ message: 'Forbidden' });
+  }
+
   // TODO: Re-enable this auth check once we upgrade to Vercel Pro or use an external cron job that supports custom headers
   // // Check for the secret in query parameters
   // if (req.query.cron_secret !== process.env.CRON_SECRET) {
