@@ -1,6 +1,7 @@
 import { SolicitationTable } from './components/SolicitationTable'; // Use relative import
 import { Box } from '@mui/material'; // Import Box for layout
 import { WaitlistForm } from '@/components/WaitlistForm'; // Import the new component
+import { headers } from 'next/headers'; // Import headers
 
 export const dynamic = 'force-dynamic';
 
@@ -12,8 +13,12 @@ export default async function HomePage() {
   // const sbirService = new SBIRApiService();
   // const topics = await sbirService.getActiveTopics();
 
-  // const isVercelBuild = !!process.env.VERCEL;
-  // const baseUrl = isVercelBuild
+  const host = headers().get('host');
+  const protocol = host?.includes('localhost') ? 'http' : 'https';
+  const baseUrl = `${protocol}://${host}`;
+
+  // const isVercelBuild = !!process.env.VERCEL; // Removed old logic
+  // const baseUrl = isVercelBuild // Removed old logic
   //   ? 'http://localhost:3000' 
   //   : typeof window === 'undefined'
   //     ? 'http://localhost:3000' 
@@ -22,14 +27,14 @@ export default async function HomePage() {
   // const fetchUrl = `${baseUrl}/api/solicitations`; 
   // console.log('[DEBUG] Fetching topics from:', fetchUrl); 
 
-  const res = await fetch('/api/solicitations', {
+  const res = await fetch(`${baseUrl}/api/solicitations`, {
     cache: 'no-store', // Ensures we always hit our API route, which has its own cache
   });
 
   if (!res.ok) {
     // const errorText = await res.text(); 
     // console.error(`[HomePage Server Component] Failed to load SBIR topics: ${res.status}, Response: ${errorText}`);
-    throw new Error(`Failed to load SBIR topics: ${res.status}`);
+    throw new Error(`Failed to fetch solicitations: ${res.status}`); // Updated error message
   }
  
   const topics = await res.json();
