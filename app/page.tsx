@@ -13,7 +13,8 @@ export default async function HomePage() {
   // const sbirService = new SBIRApiService();
   // const topics = await sbirService.getActiveTopics();
 
-  const host = headers().get('host');
+  const headersList = await headers(); // Await headers()
+  const host = headersList.get('host');
   const protocol = host?.includes('localhost') ? 'http' : 'https';
   const baseUrl = `${protocol}://${host}`;
 
