@@ -2,6 +2,8 @@ import { SolicitationTable } from './components/SolicitationTable'; // Use relat
 import { Box } from '@mui/material'; // Import Box for layout
 import { WaitlistForm } from '@/components/WaitlistForm'; // Import the new component
 
+export const dynamic = 'force-dynamic';
+
 // Revalidate the page data periodically (e.g., every hour)
 // Or use { next: { revalidate: 3600 } } in fetch if using fetch API directly
 // export const revalidate = 3600; // This will be handled by the fetch revalidate option
@@ -10,22 +12,22 @@ export default async function HomePage() {
   // const sbirService = new SBIRApiService();
   // const topics = await sbirService.getActiveTopics();
 
-  const isVercelBuild = !!process.env.VERCEL;
-  const baseUrl = isVercelBuild
-    ? 'http://localhost:3000'
-    : typeof window === 'undefined'
-      ? 'http://localhost:3000'
-      : '';
+  // const isVercelBuild = !!process.env.VERCEL;
+  // const baseUrl = isVercelBuild
+  //   ? 'http://localhost:3000' 
+  //   : typeof window === 'undefined'
+  //     ? 'http://localhost:3000' 
+  //     : '';
 
-  // const fetchUrl = `${baseUrl}/api/solicitations`; // Previous debug line, removed as per new instructions
-  // console.log('[DEBUG] Fetching topics from:', fetchUrl); // Previous debug line, removed as per new instructions
+  // const fetchUrl = `${baseUrl}/api/solicitations`; 
+  // console.log('[DEBUG] Fetching topics from:', fetchUrl); 
 
-  const res = await fetch(`${baseUrl}/api/solicitations`, {
-    next: { revalidate: 3600 }, // Revalidates this specific fetch every hour
+  const res = await fetch('/api/solicitations', {
+    cache: 'no-store', // Ensures we always hit our API route, which has its own cache
   });
 
   if (!res.ok) {
-    // const errorText = await res.text(); // Previous more detailed error logging, simplified as per new instructions
+    // const errorText = await res.text(); 
     // console.error(`[HomePage Server Component] Failed to load SBIR topics: ${res.status}, Response: ${errorText}`);
     throw new Error(`Failed to load SBIR topics: ${res.status}`);
   }
