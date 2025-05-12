@@ -10,7 +10,11 @@ export default async function HomePage() {
   // const sbirService = new SBIRApiService();
   // const topics = await sbirService.getActiveTopics();
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/solicitations`, {
+  const baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : 'http://localhost:3000';
+
+  const res = await fetch(`${baseUrl}/api/solicitations`, {
     next: { revalidate: 3600 }, // Revalidates this specific fetch every hour
   });
 
